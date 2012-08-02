@@ -1,0 +1,137 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+ \definecolor{grey}{rgb}{0.9,0.9,0.9}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+\begin{document}
+
+\section{One-Way Functions}
+One of the most important concepts we will use in cryptography is the idea of a function, $f$, that is easy to evaluate and difficult to inverse.  That is, given $x$, computing $f(x)$ is easy while computing $x$ given $f(x)$ is difficult.  Formalizing this notion requires a little bit of work.  Let us start with a bad attempt at a definition
+
+\begin{definition}
+Let $f: D\rightarrow R$ be a function.  We say that $f$ is $(t_1,t_2)$-\emph{one-way} if 
+\begin{enumerate}
+\item There exists an algorithm which computes $f$ in time less than or equal to $t_1$.
+\item For all $x\in D$ and for all algorithms that run in time at most $t_2$ the algorithm cannot output $x$.
+\end{enumerate}
+\end{definition}
+There are several issues with this definition that make it unrealistic and unfeasible:
+\begin{enumerate}
+\item By simply guessing a random $x\in D$ an algorithm may succeed with some probability.
+\item An algorithm may have several $x\in D$ and their corresponding $f(x)$ hardcoded and thus be able to respond correctly with some probability.
+\item This definition allows for functions that are not informative to be one-way.  The constant function is very hard to invert under this definition as it is hard to recover the original $x$.
+\end{enumerate}
+With these definitions in mind we can formulate a slightly better definition.
+\begin{definition}
+Let $f: D\rightarrow R$ be a function.  We say that $f$ is $(t_1,t_2)$-\emph{one-way} if 
+\begin{enumerate}
+\item There exists an algorithm which computes $f$ in time less than or equal to $t_2$.
+\item For all algorithms $A$ that run in time at most $t_2$, $\Pr_{x\in D}[y\leftarrow A(f(x)) \wedge f(y) = f(x)]<\epsilon$.
+\end{enumerate}
+\end{definition}
+Unfortunately, we've introduced a new parameter and there is not explicit relationship between $t_2$ and $\epsilon$.  This can be addressed by making $\epsilon$ a function of $t_2$.  However, this problem is normally addressed by creating a size parameter $n$ considering a series of functions $f_n$.  Then we can consider the success probability and time as functions of this size parameter.  Additionally, we encode the size parameter to the adversary to allow them sufficient time to work in the case where $f$ dramatically shrinks the input.  We are finally ready to provide a \emph{uniform} definition of a one-way function.
+\begin{definition}
+Let $f:\chi^n\rightarrow \aleph^*$ be a function that runs in time polynomial in $n$.  We say that $f$ is a \emph{one-way} function.  If for all algorithms $A$ (running in time polynomial in input length) the quantity $\epsilon(n) = \Pr_{x\leftarrow \chi^n} [y\leftarrow A(1^n, f(x)) \wedge f(y) = f(x)]$ is a negligible function.
+\end{definition}
+We can also consider one-way functions in the non-uniform model of the computation.  The may difference is that the adversary is allowed a different input on an advice tape for each input length.  This input may only depend on the input length.  In particular, non-uniformity removes the need for randomness in $A$ as the advice tape may encode the best set of random coins for that length.  We now provide a non-uniform definition:
+\begin{definition}
+A function $f:\chi^n\rightarrow \aleph^*$ is a \emph{non-uniform one-way} function if it can be computed in polynomial time in $n$ and for all non-uniform $A$ running in polynomial time, 
+$\epsilon(n) = \Pr_{x\leftarrow \chi^n}[y\leftarrow A(1^n, f(x)) \wedge f(y) = f(x)]$ is a negligible function.
+\end{definition}
+
+\subsection{Examples of functions thought to be one-way}
+We do not know if one-way functions exist.  A necessary condition is that $P\neq NP$ but we do not know if this is sufficient.
+\begin{enumerate}  
+\item \emph{Factoring}: $f_{mul}(x, y) =xy$ where $x,y$ are prime and of the same length.
+\item \emph{Discrete Log}: $f_{dl}(p, g, i) = (p, g, g^i \mod p)$ where $p$ is a prime and $g$ is a generator for $\mathbb{Z}_p$.
+\item \emph{Subset Sum}: $f_{ss}(x_1,x_2,...,x_n,I) = (x_1,x_2,...,x_n, \sum_{i\in I} x_i)$.
+\end{enumerate}
+
+\subsection{Weak one-way functions}
+In addition to one-way functions that hard to invert nearly everywhere we can consider functions that are difficult to invert on a small portion of the input space.  We will call these \emph{weak one-way functions}:
+\begin{definition}
+A function $f:\chi^n\rightarrow \aleph^*$ is a \emph{non-uniform one-way} function if it can be computed in polynomial time in $n$, there exists a constant $c>0$, such that for all non-uniform $A$ running in polynomial time, 
+$\epsilon(n) = \Pr_{x\leftarrow \chi^n}[y\leftarrow A(1^n, f(x)) \wedge f(y) = f(x)] = 1-\frac{1}{n^c}$.
+\end{definition}
+A weak one-way function can be augmented to a strong one-way function by parallel repetition.  We present a theorem without proof here:
+\begin{theorem}
+Let $f:\chi^n\rightarrow \aleph^*$ be a weak one-way function, and let $g:\chi^{t(n)}\rightarrow \aleph^*$ be constructed as $g(x_1,...,x_t) = (f(x_1),...,f(x_t))$, where each $x_i$ is $n$ bits long and $t(n) = nn^c$, then $g$ is a one-way function.
+\end{theorem}
+The proof relies on the independence of the inputs and the independence of position.  We do not provide a proof here.
+\section{Hardcore bit}
+We've seen how one-way functions protect their input, it is difficult to compute a pre-image given the output of the function.  However, certain bits of the input may be easy to compute.  For instance let $g(x_1, x_2) = (x_1, f(x_2))$ where $f$ is a one-way function.  Clearly, $g$ is a one-way function but several bits of its input are directly revealed.  Intuitively, it seems like some piece of the input should be protected.  This piece that is completely protected is called a \emph{hard-core} predicate.
+
+\begin{definition}
+A polynomial time computable predicate $B: \{0,1\}^*\rightarrow \{0,1\}$ is \emph{hard-cre} for a function $g$ if for every non-uniform polynomial-time adversary $A$, there is a negligible function $\nu(n)$ such that:
+\[
+\Pr_{x\leftarrow \{0,1\}^*}[A(f(x)) = B(x)] <\frac{1}{2}+\nu(n).
+\]
+\end{definition}
+This can be rephrased as saying that the joint distribution $(f(X), B(X))\approx_c (f(X), U_1)$ that is the hardcore predicate is indistinguishable from a random bit even in the presence of $f(X)$.
+
+A natural question is whether one-way functions have hard-core predicates and if so are they easy to find.
+
+Blum and Micali~\cite{blumMicali82} showed that if the exponentiation is a one-way function then the most significant bit is a hard-core predicate:
+\begin{theorem}~\cite{blumMicali82} Assume that $f(g,p,x) = (g,p, g^x\mod p)$ is a one-way function, then $B(g,p,x) = x \mod p/2$ is a hard-core predicate.
+\end{theorem}
+Several years later, Goldreich and Levin~\cite{goldreichLevin89} showed that the inner product is a hardcore function for any one-way function.  Intuitively, this is because the inner product is information-theoretically unknown even without knowledge of all but one bits of the preimage.  
+
+\begin{theorem}~\cite{goldreichLevin89}
+Let $f$ be a one-way function.  Define $f'(x, r) = (f(x), r)$ where $|x| = |r|$, then 
+\[
+B(x) = \langle x, r\rangle = \sum_{i=1}^k x_ir_i \mod 2
+\] is a hard-core predicate for $f'$.
+\end{theorem}
+\bibliographystyle{plain}
+\bibliography{crypto}
+\end{document}
