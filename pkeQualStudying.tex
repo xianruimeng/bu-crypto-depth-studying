@@ -168,6 +168,53 @@ We know that $A'$ outputs the correct $m$ with probability $1/2+\epsilon$ for no
 &= \Pr_{(i, i^{-1}), y\leftarrow R_i}[A(i, y) = f^{-1}(i^{-1}, y) ] 
 \end{align*}
 \end{proof}
+\section{Key Agreement}
+For various reasons~(efficiency, state, etc.), we would like to to transfer from an asymmetric setting to a symmetric setting.  A prerequisite is for the two participants to share a key.  Roughly speaking this allows a symmetric cipher and HMAC to be used to achieve something resembling a secure channel.  Public key encryption allows one mechanism to provide a shared key.  A key can be encrypted from one participant to the other and both users can begin to speak using this key.  Unfortunately, using this approach only one of the participants has an impact on the final key.  Key agreement formalizes a more general notion, how can 2~(or more) participants run a protocol and agree on a key such that no external observer knows anything about the key.
+
+\begin{definition}
+A protocol $\Pi = (P_1, P_2)$ is a key agreement protocol between two participants if the following properties hold:
+\begin{enumerate}
+\item Correctness: For randomness domain $D$, $\forall r_1, r_2\in D, [P_1, P_2](r_1, r_2) = x_1, x_2$ one has that $x_1 = x_2$.
+\item Secrecy:Let $\tau$ represent the transcript of messages during $\Pi$ and let $\mathcal{R}$ be the range of valid keys.  We require that the resulting key should be indistinguishable from a random key:
+\[
+\tau([P_1, P_2](R_1, R_2)), X_1, X_2 \approx_c \tau([P_1, P_2](R_1, R_2)), U_{\mathcal{R}}, U_{\mathcal{R}}
+\]
+\subsection{Diffie-Hellman}
+In their seminal work~\cite{diffieHellman} proposed a key agreement protocol.  Let $G$ be a prime order group and let $g$ be a generator of $G$~(these are considered public parameters).  The protocol is as follows:
+
+\begin{figure}[ht]
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\caption{Prover}
+\textbf{$P_1$}
+\begin{enumerate}
+\item Input $(G, g)$.
+\item Sample $a\leftarrow \{1, ..., p\}$.  Compute $g^a$.  Send $g^a$ to $B$.
+\vspace{.1in}
+\item Receive $g^b$ from $B$.  Compute $r = (g^b)^a = g^{ab}$.  Output $r$.
+\end{enumerate}
+%\includegraphics[scale=1]{filename1}
+\label{fig:DHa}
+\end{minipage}
+\hspace{0.5cm}
+\begin{minipage}[t]{0.5\linewidth}
+\centering
+%\caption{Verifier}
+\textbf{$P_2$}
+%\includegraphics[scale=1]{filename2}
+\begin{enumerate}
+\item Input $(G, g)$
+\item Sample $b\leftarrow \{1,...,p\}$.  Compute $g^b$.  Send $g^b$ to $A$.
+\item Receive $g^a$ from $A$.  Compute $r = (g^a)^b = g^{ab}$.  Output $r$.
+\end{enumerate}
+\label{fig:DHb}
+\end{minipage}
+\caption{Diffie-Hellman Protocol}
+\label{fig:DH}
+\end{figure}
+\end{enumerate}
+\end{definition} 
+The \emph{Diffie-Hellman assumption} says that the ensemble $(g, g^a, g^b, g^{ab}) \approx_c (g, g^a, g^b, g^r)$ and the security of the above protocol follows directly from the Diffie-Hellman assumption.
 \bibliographystyle{plain}
 \bibliography{crypto}
 \end{document}
