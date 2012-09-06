@@ -1,0 +1,173 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+ \definecolor{grey}{rgb}{0.9,0.9,0.9}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+
+
+
+\newcommand{\Succ}{\mathsf{Succ}}
+\newcommand{\Adv}{\mathbf{Adv}}
+ \newcommand{\Exp}{\mathbf{Exp}}
+\begin{document}
+
+\section{Public Key Encryption}
+Until this point we have reviewed largely symmetric primitives.  One-way functions, one-way permutations, pseudorandom generators, symmetric encryptions, message-authentication codes.  These are useful tools when two or more people with shared state wish to communicate.  However, we now transition to a more difficult question, can two people communication without knowing anything about the other person?
+
+Now that we wish to communicate with an unknown person, we must have some way of identifying this person, we will call this the public key or $PK$.  This person also must have a way to receive and understand this communicate, we call this the secret key or $SK$.  In the symmetric case we had $SK=PK$ but this will not be meaningful for large scale communication as we want to allow any person to send a message, this $PK$ is known and cannot allow retrieval of messages.
+
+\begin{definition}
+A public key encryption (PKE) consists of three algorithms $E = (Gen, Enc, Dec)$ such that:
+\begin{enumerate}
+\item $Gen(1^n) = (pk, sk)$
+\item Correctness: $\Pr[(pk, sk)\leftarrow Gen(1^n), Dec(sk, Enc(pk, m))] = 1$.  This says that any message encrypted under a public-key is recoverable when decrypted under the corresponding private key.
+\item Security: We would like a similar property to the symmetric case where we said that the adversary could not learn any piece of information about the message.  Again we will call this semantic security~\cite{GoldwasserMicali}:
+\subitem Semantic Security: We say $E$ is semantically security (SEM-CPA) for message domain $M$ and leakage function $\ell()$ if there exists a polynomial time $S$ such that for all PPT $D$ the following games are indistinguishable:
+\begin{center}
+\begin{tabular}{c|c}
+\begin{minipage}{3in}
+\begin{tabbing}
+123\=123\=123\=123\=123\=\kill
+\textbf{Experiment} $\Exp^{\mathrm{sim}}_{E,D, S}(n)$: \\
+$(pk,s_{sim}) \leftarrow S(1^n)$ \\
+$(m, s_{dist})\leftarrow D(pk)$\\
+$c\leftarrow S(s_{sim}, \ell(m))$\\
+$b\leftarrow D(c, s_{dist})$
+\end{tabbing} \end{minipage} &
+\begin{minipage}{3in}
+\begin{tabbing}
+123\=123\=123\=123\=123\=\kill
+\textbf{Experiment} $\Exp^{\mathrm{adv}}_{E, D}(k)$: \\
+$(pk,sk) \leftarrow Gen(1^k)$ \\
+$(m, s_{dist})\leftarrow D(pk)$\\
+$c\leftarrow Enc(pk, m)$\\
+$b\leftarrow D(c, s_{dist})$
+\end{tabbing} \end{minipage} 
+\end{tabular}
+\end{center}
+\subitem Indistinguishability security: We say $E$ is indistinguishable (IND-CPA) for domain $M$ and leakage function $\ell()$, if for all PPT $D$, $D$ wins the following game with probability at most negligibly more than $1/2$:
+\begin{center}
+\begin{minipage}{3in}
+\begin{tabbing}
+123\=123\=123\=123\=123\=\kill
+\textbf{Experiment} $\Exp^{\mathrm{ind\mbox{-}cpa}}_{E,D}(n)$: \\
+$b\leftarrow \{0,1\}$\\
+$ (pk,sk) \leftarrow Gen(1^n)$ \\
+$(m_0, m_1,s_{dist}) \leftarrow D(pk)$ \\
+If $\ell(m_0)\neq \ell(m_1)$ output $\perp$\\
+$c \leftarrow Enc(pk, m_b)$ \\
+$b' \leftarrow D(c, s_{dist})$ \\
+If $b' = b$ return $1$ else return $0$
+\end{tabbing} \end{minipage} 
+\end{center}
+\end{enumerate}
+\end{definition}
+As before the two definitions are equivalent:
+\begin{theorem}
+$E$ is SEM-CPA secure for leakage function $\ell()$ iff $E$ is IND-CPA secure for leakage function $\ell()$.
+\end{theorem}
+Proof is similar to the symmetric case.
+\textbf{Notes:} 
+\begin{itemize}
+\item It is clear that a asymmetric scheme must be randomized otherwise the distinguisher could simply encrypt both messages before hand and check which is received.
+\item Security for multiple messages follows from security for a single message by a hybrid argument (since an adversary can create encryptions using the public key).
+\item We let $D$ choose messages after seeing the public key.
+\end{itemize}
+\section{Trapdoor Functions}
+We previously saw how to define a function that is easy to compute but hard to invert.  Now, we'll add a piece of information that allows easy inversion~(this is called a trapdoor).  We'll see how to build public-key encryption out of these objects.
+\begin{definition}
+An ensemble $F$ is an ensemble of a \emph{trapdoor function}, indexed by $i$~($f_i:D_i\rightarrow R_i$) if there exists the following algorithms:
+\begin{itemize}
+\item $G$: an index generation algorithm, $(i, i^{-1})\leftarrow G(1^n)$
+\item $S$: a domain sampling algorithm, $x\leftarrow S(1^n, i), x\in D_i$
+\item $F$: an evaluation algorithm: $\forall i$ and $x\in D_i, F(1^n, i, x) = f_i(x)$
+\item $F^{-1}$: an inversion algorithm: $\forall i$ and $\forall y\in R_i, x\leftarrow F^{-1}(1^n, i^{-1}, y) , F(1^n, i, x) = y$.
+\item Security: We retain the one-wayness from OWF: 
+\[ \Pr_{(i, i^{-1})\leftarrow G(1^n), x\leftarrow S(1^n, i)}[x'\leftarrow A(f_i(x))   \wedge f_i(x') = f_i(x)] = \nu(n)
+\]
+\end{itemize}
+\end{definition}
+Usually, we will want a trapdoor function to be 1-1 so we can uniquely recover the intended preimage.  Furthermore, we can consider the situation where $D_i = R_i$ and each $f_i$ is a 1-1 function.  We call these objects trapdoor permutations.
+
+Recall that any one-way function have a hardcore predicate (for example the GL bit) that is difficult to predict given only the output.  We describe a PKE scheme based on a 1-1 trapdoor function (or TDP).  Let $G, S, F, F^{-1}$ be a TDF and let $H$ be a hardcore predicate.
+
+\begin{itemize}
+\item $Gen(1^n) = G(1^n) = (i, i^{-1})$
+\item $Enc(i, m)$:
+\subitem $x\leftarrow S(i)$
+\subitem $c = (F(i, x), m\oplus H(x))$
+\item $Dec(i^{-1}, y, b) = c \oplus H(F^{-1}(i^{-1}, y))$
+\end{itemize}
+\begin{theorem}
+The TDF \& hardcore predicate scheme is IND-CPA secure.
+\end{theorem}
+\begin{proof}
+Assume that an adversary $A'$ wins the IND-CPA game with probability $1/2 + \epsilon$.  We will construct an adversary $A$ that is able to predict the hardcore predicate of a trapdoor function.  Since we are considering a single bit encryption we know that $A'$ is trying to decide if they receive an encryption of 0 or an encryption of 1. $A$ operates as follows:
+\begin{enumerate}
+\item Receive input $i, y = f_i(x)$
+\item Select $b\leftarrow \{0, 1\}$
+\item Run $b' \leftarrow A'(i, (y, b))$
+\item Output $b'\oplus b$
+\end{enumerate}
+We know that $A'$ outputs the correct $m$ with probability $1/2+\epsilon$ for non negligible $\epsilon$.
+\begin{align*}
+1/2+\epsilon &= \Pr_{(i, i^{-1}), y\leftarrow R_i, b\in\{0,1\}}[A'(i,y, f^{-i}(i^{-1}, y)\oplus m) = m]\\
+&=1/2\left(\Pr[A'(i, (y, b))=b| f^{-1}(i^{-1}, y) = 0]+\Pr[A'(i, (y, b))=1-b| f^{-1}(i^{-1}, y) = 1] \right)\\
+&=1/2\left(\Pr_{(i, i^{-1}), y\leftarrow R_i}[A(i, y) =0 |  f^{-1}(i^{-1}, y)  = 0] + \Pr_{(i, i^{-1}), y\leftarrow R_i}[A(i, y) =1 | f^{-1}(i^{-1}, y) =1]\right)\\
+&= \Pr_{(i, i^{-1}), y\leftarrow R_i}[A(i, y) = f^{-1}(i^{-1}, y) ] 
+\end{align*}
+\end{proof}
+\bibliographystyle{plain}
+\bibliography{crypto}
+\end{document}
