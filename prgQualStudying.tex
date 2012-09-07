@@ -1,0 +1,167 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+ \definecolor{grey}{rgb}{0.9,0.9,0.9}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+
+
+
+\newcommand{\Succ}{\mathsf{Succ}}
+\newcommand{\Adv}{\mathbf{Adv}}
+ \newcommand{\Exp}{\mathbf{Exp}}
+\begin{document}
+
+\section{Pseudorandom Generator - PRG}
+\begin{definition}
+A distribution is considered \textbf{pseudorandom} if no efficient computation can distinguish it from the true uniform distribution by a non-negligible advantage. Formally, a distribution ensemble $D = \{D_n\}_{n\in N}$ is pseudorandom if for any ppt adversary A, and any negligible parameter $\epsilon$:
+\begin{equation}
+|Prob_{x \leftarrow D} (A(x) = 1) - Prob_{x \leftarrow U} (A(x) = 1)| \leq \epsilon
+\end{equation}
+Where $U_n$ represent the uniform distribution ensemble.\\
+The previous equation can also be written as $D \approx_c U$ which means that the distribution ensemble $D = \{D_n\}_{n\in N}$ is computationally indistinguishable from the uniform distribution ensemble $U = \{U_n\}_{n\in N}$.\\
+\end{definition}
+
+\begin{definition}
+A \textbf{pseudrandom generator} is a deterministic algorithm $G: \{0,1\}^n \rightarrow \{0,1\}^m$ with the following properties:
+\begin{itemize}
+\item Efficiency: G is computable in ppt
+\item Expansion: $m > n$
+\item Pseudorandomness: the ensemble $\{G(U_n)\}_{n \in N} \approx_c \{U_m\}_{m \in N}$
+\end{itemize}
+\end{definition}
+
+\subsection{Increasing the expansion factor}
+Suppose we have a PRG $G_1$ such that $G_1: \{0,1\}^n \rightarrow \{0,1\}^{n+1}$ (a generator with expansion factor of 1 Bit), then we can construct a PRG $G$ with arbitrary polynomial expansion factor.\\
+The construction is as follows: we start with a truly uniform input of $n$ bits,$U_n$, that are used as seed to the first instance of $G_1$, which by assumption is PRG. Next the output of the first instance of $G_1$ is divided in two parts: the first $n$ bits are fed into the second instance of $G_1$ as seed, while the last bit becomes the first bit of the output. If we repeat the process $m$ times we obtain $m$ pseudorandom bits.\\
+It can be shown (using the hybrid argument)that $G$ (the PRG with poly expansion factor constructed using $G_1$) is also PRG. The sketch of the proof follows.
+\begin{proof}
+Let's consider $m+1$ intermediate distributions $H_i: 0 \leq i \leq m$ where the first $i$ bits are chosen from the uniform distribution and the last $m-1$ bits are chosen from the output of $G$. By construction $H_0$ is the full output of $G$ while $H_m$ is the truly uniform distribution $U_m$. $H_i$ and $H_{i+1}$ will be different in only one bit.\\
+We assume that $G$ is not PRG, that is there exist some adversary A that can distinguish between $G$ ($H_0$) and $U_m$ ($H_m$) with non negligible advantage $\epsilon$. That means that there must exists an $i$ such that $A$ can distinguish between $H_i$ and $H_{i+1}$. Then we can construct and adversary $A^{'}$ that uses $A$ to distinguish between $G_1$ and $U_n$ by at least $\epsilon \over m$.
+\end{proof}
+
+\begin{theorem}
+There exist PRG iff there exist OWF
+\end{theorem}
+
+\begin{proof}
+$PRG \rightarrow OWF$\\
+Consider a generator $G: \{0,1\}^n \rightarrow \{0,1\}^{2n}$.\\
+We define the following one way function: $f: \{0,1\}^n \rightarrow \{0,1\}^n$ as follows: $f(x,y) = G(x)$ with $|x| = |y|$.\\
+Now we assume by contradiction that there exist and adversary A that can invert $f$, that is:
+\begin{equation}
+Prob[f(A(f(U_{2n}))) = f(U_{2n})] > \epsilon
+\end{equation}
+Then we can construct and adversary $D$ that can distinguish between $G(U_n)$ and $U_{2n}$.\\
+D on input $y = f(x)$ output 1 if $f(A(y)) = y)$ else output 0.
+By construction we have that $f(U_{2n}) = G(U_n)$, therefore:
+\begin{equation}
+Prob[D(G(U_n))= 1] = Prob[f(A(G(U_n)) = G(U_n)] > \epsilon
+\end{equation} 
+Also we know that at most $2^n$ values of the image of $f$ can be mapped to the pre-image, therefore $A$ can invert $f$ only on those values, that is:
+\begin{equation}
+P(D(U_{2n})= 1) = P[f(A(U_{2n})) = f(U_{2n})] \leq {1 \over 2^n}
+\end{equation}
+
+(3) - (4) gives us a contradiction wrt the definition of PRG.
+\end{proof}
+
+The other direction of the proof, $OWF \rightarrow PRG$, can be found at \url{http://en.wikipedia.org/wiki/Pseudorandom_generator_theorem} and it makes use of the definition of hardcore bit. 
+
+\subsection{Construction of PRG}
+We can construct PRG from OW Permutations and the use of hard codre bit:
+\begin{equation}
+G(x) = f(x), B(x)
+\end{equation}
+The proof that $G$ is PRG follows from the definition of hard core bit: $f(x),B(x) \approx_c f(x), b$ with $b \leftarrow_R \{0,1\}$
+ 
+
+\section{Pseudorandom Permutation - PRP and pseudorandom function PRF}
+
+A family of functions $P^{a,n}$ is pseudorandom function/permutation if for any ppt adversary A:
+\begin{equation}
+Prob_{k \in \{0,1\}^a}[A^{P_k}= 1] - Prob_{P \in P^n}[A^{P}= 1] < \epsilon
+\end{equation} 
+where $P^n$ is the family of function/permutations $P: \{0,1\}^n \rightarrow \{0,1\}^n$ 
+
+Basically we have two experiment: in the first one the adversary interacts with an oracle representing a specific $f_k$ from the family $F= \{f_k\}_{k \in \{0,1\}^n}$  giving $x$ and receiving $f_k(x)$ back. In the second experiment the adversary interacts with an oracle that choose a random function from the family.
+The function/permutation is random if the adversary cannot distinguish between the two experiments.\\
+
+There is also a stronger definition (SPRF/PRP) where the adversary has access to the oracle to compute the image $f_k$ and the oracle to compute the pre-image $f^{-1}_{k}$. This definition takes into account a stronger adversary that has also access to a decryption oracle.  A can generates smart cipher texts in order to learn whether or not a real cipher was generated from a random permutation or from a pseudo random permutation.\\
+
+\textbf{How to distinguish a random permutation from something totally random? COLLISION   }
+
+\begin{theorem}
+if there exist OWF then there exist SPRP
+\end{theorem}
+It can be proven in stages:
+\begin{enumerate}
+\item OWF $\rightarrow$ PRG 
+\item PRG $\rightarrow$ PRF
+\item PRF $\rightarrow$ PRP
+\item PRP $\rightarrow$ PRF
+\end{enumerate}
+
+Stage 2) is the\textbf{ GGM theorem}.
+\begin{theorem}
+If there exist PRG then there exist PRF
+\end{theorem}
+GGM show how to efficiently construct a PRF given a PRG using a binary tree. The proof that the result is a PRF is done by hybrid arguments.\\
+
+Stage 3) (form PRF to PRP) is done using the \textbf{Feistel Transform}. We need three round of the Feistel Transform to obtain a PRP. The theorem that prove it is \textbf{Luby and Rackoff '88}
+
+
+
+%\bibliographystyle{plain}
+%\bibliography{crypto}
+\end{document}
