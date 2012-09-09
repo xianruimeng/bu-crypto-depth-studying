@@ -15,6 +15,7 @@
 \newcommand{\np}{\class{NP}}
 \newcommand{\ip}{\class{IP}}
 \newcommand{\zk}{\class{ZK}}
+\newcommand{\pzk}{\class{PZK}}
 \newcommand{\negl}{\class{negl}}
 \newcommand{\poly}{\class{poly}}
 \newcommand{\gni}{\class{GNI}}
@@ -37,9 +38,8 @@
 \section{Interactive Proofs ($\ip$)}
 \subsection{``classical" Proofs}
 $\np$ is the class of languages $L$, s.t.
-\begin{description}
-\item[Completeness] If $x\in L$, then $\exists V$ s.t. $V(x, proof) = accept$. 
-\item[Soundness] If $x\notin L$, then $\forall proof*$, $V(x, proof*) = reject$.
+w\item[Completeness] If $x\in L$, then $\exists V$ s.t. $V(x, proof) = accept$. 
+\item[Soundness] If $x\notin L$, then $\forall proof^*$, $V(x, proof^*) = reject$.
 \item[Efficiency] $V(x, proof)$ runs in $\poly(|x|)$.
 \end{description} 
 \subsection{Interactive Proofs}
@@ -89,7 +89,36 @@ Intuitively, a single run of $\Pi_\gni$ gives a soundness error at most 1/2. Let
 
 
 \section{Zero Knowledge ($\zk$)}
+\begin{definition}[\textbf{first attempt to define $\zk$}]
+A proof system for a language L is an
+$\ip$ $(V_L; P_L)$ for $L$, such that there is a probabilistic algorithm $S$ (or ``Simulator") that
+runs in expected polynomial time and such that for every string $x\in L$ the distribution of outputs of
+$S(x)$ is identical to the distribution of views of $V_L$ of the interaction between $P_L$ and $V_L$ on input $x$.
+\end{definition}
+$\forall x \in L$, $VIEW^{(A;S)}_A(a; b; 1^n) = VIEW^{(A;P_L)}_A (a; b; 1^n)$.
 
+The definition will holds for every verifier follows the protocol's rules, however, it is not strong enough since a cheating verifier may gain some information by not following the protocol.
+
+\begin{definition}[\textbf{Perfect $\zk$}]
+A proof system for a language L is an $\ip$ $(V_L; P_L)$ for $L$, such that for every polynomial time verifier $V^*$, $\exists$ a probabilistic algorithm $S$ (for Simulator) that runs in average polynomial time and such that for every string $x \in L$ the distribution of outputs of $S(x)$ is identical to the distribution of views of $V^*$ of the interaction between $P_L$ and $V^*$ on input x.
+\end{definition}
+This stronger condition implies that the prover can still deliver a convincing proof that $x \in L$ without giving away any information about $x$, even if the prover does not trust the verifier to follow the protocol of the proof system.
+
+Consider the following protocol for $GI$, which we denote $\Pi_{GI}$.
+
+Common input: graphs $G_0, G_1$.
+\begin{enumerate}
+\item $P$ chooses a random permutation $\sigma$.
+\item $P$ computes $H = \sigma(G_0)$ and send $H$ to $V$.
+\item $V$ chooses a random bit $b \leftarrow \zo$ and send it to $P$.
+\item $P$ computes $H = \rho(G_b)$, where $\rho = \sigma$ if $b=0$, o/w $\rho = \sigma \cdot \pi$.
+
+Then send $\rho$ to $V$.
+\item $V$ accepts if $H = \rho(G_b)$.
+\end{enumerate}
+\begin{lemma}
+The  protocol $\Pi_{GI}$ is in 	$\pzk$.
+\end{lemma}
 \end{document}
 
 
