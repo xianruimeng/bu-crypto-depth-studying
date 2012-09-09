@@ -1,0 +1,106 @@
+\documentclass[11pt]{article}
+
+\usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}      % [top=2cm, bottom=2cm, left=2cm, right=2cm]
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    
+\usepackage{graphicx}
+\usepackage{amssymb, amsmath, amsthm, amsfonts}
+\usepackage{enumerate}
+
+\newcommand{\class}[1]{{\ensuremath{\mathsf{#1}}}}
+\newcommand{\gen}{\class{Gen}}
+\newcommand{\enc}{\class{Enc}}
+\newcommand{\dec}{\class{Dec}}
+\newcommand{\np}{\class{NP}}
+\newcommand{\ip}{\class{IP}}
+\newcommand{\zk}{\class{ZK}}
+\newcommand{\negl}{\class{negl}}
+\newcommand{\poly}{\class{poly}}
+\newcommand{\gni}{\class{GNI}}
+\newcommand{\zo}{\{0, 1\}}
+\newcommand{\vect}[1]{\textbf{#1}}
+\newcommand{\zq}{\mathbb{Z}_q}
+\newcommand{\cvect}[1]{(\vect{#1}_1, ... , \vect{#1}_k)}
+\newcommand{\bL}{\bar{L}}
+\newcommand{\Label}{\class{label}}
+\newcommand{\ham}{\class{Ham}}
+
+
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\begin{document}
+\section{Interactive Proofs ($\ip$)}
+\subsection{``classical" Proofs}
+$\np$ is the class of languages $L$, s.t.
+\begin{description}
+\item[Completeness] If $x\in L$, then $\exists V$ s.t. $V(x, proof) = accept$. 
+\item[Soundness] If $x\notin L$, then $\forall proof*$, $V(x, proof*) = reject$.
+\item[Efficiency] $V(x, proof)$ runs in $\poly(|x|)$.
+\end{description} 
+\subsection{Interactive Proofs}
+GMR generalize this concept Interactive Proof ($\ip$) to think of a proof as a game between a `proofer' and a `verifier'. The game can be interactive, where the verifier asks questions and the prover answers, and the goal of the game is for the prove to convince the verifier that the statement is true. The soundness is now probabilistic, i.e. the verifier may not get convinced ``only'' with high probability.
+
+
+\begin{definition}
+An interactive proof for the decision problem $\pi$, is a following process:
+\begin{enumerate}
+\item There are two participants, a prover and a verifier.
+\item In the beginning of the proof both participants get the same input (representing the statement
+to be proven).
+\item The verifier and the prover exchange messages.
+\item Both the verifier and the prover can perform some private computation and use local randomness.
+\item At the end, the verifier states whether he was convinced or not.
+\end{enumerate}
+\end{definition}
+
+\begin{definition}
+An interactive proof for a language L with error $\nu$ is a two-party protocol $(P;V)$ such that:
+\begin{enumerate}
+\item (Efficiency) $V$ is a PPT.
+\item (Completeness) If $x \in L$, then $Pr([P; V](1^n; x; 1^n; x) = (1; 1) > 1 - \nu$.
+\item (Soundness) If $x \notin L$, then $Pr([P; V](1^n; x; 1^n; x) = (\bot; 1) < \nu$.
+\end{enumerate}
+Unless stated, otherwise we have $\nu$ in $\negl(|x|)$
+\end{definition}
+
+\begin{definition}
+$\ip$ is the class of languages that have interactive proofs.
+\end{definition}
+\begin{definition}
+$\ip = \class{PSPACE}$.
+\end{definition}
+
+\paragraph{Example}: $\class{GNI} \in \ip$.
+
+Common input: graphs $G_0; G_1$:
+\begin{enumerate}
+\item $V$ chooses $b\in \zo$ randomly.
+\item $V$ chooses a random permutation $\pi\in S_n$, where $n = |V|$ and computes a new graph $H = \pi(G_{b})$, and sends $H$ to $P$.
+\item $P$ computes $b'$ such that $H$ is isomorphic to $G_{b'}$ $(H \approx G_{b'})$ and sends $b'$ to $V$ .
+\item $V$ accepts if $b = b'$.
+\end{enumerate}
+Intuitively, a single run of $\Pi_\gni$ gives a soundness error at most 1/2. Let's run $\Pi_\gni$ instance $k$ times, denote $\Pi_\gni^k$, then $\Pi_\gni^k$ has the soundness error $\frac{1}{2^k}$
+
+
+
+\section{Zero Knowledge ($\zk$)}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
