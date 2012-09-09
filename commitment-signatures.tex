@@ -66,7 +66,7 @@
 
 \section{Digital Signature}
 Digital Signatures can be related to MAC (Message Authentication Code) but they are very different. \\
-\textbf{MAC}is a piece of information used to authenticate a message; it takes the message and a secret key and outputs a ''tag''. MAC relies on symmetric encryption.\\
+\textbf{MAC} is a piece of information used to authenticate a message; it takes the message and a secret key and outputs a ''tag''. MAC relies on symmetric encryption.\\
 \textbf{Digital Signatures} are mathematical processes for proving the authenticity of a document or message. A proper digital signature implies that the message or document was created by the actual sender and not someone else. They are commonly used to prove that an electronic signature (a person's actual signature performed on the computer) is authentic. They use asymmetric cryptography.
 
 The most important difference therefore is the fact that given a digital signature, everybody can verify the source of it. Thus with digital signature we can convince a third party that the message is indeed originated by the sender. This cannot be done with MAC, because everybody that can verify can also authenticate due to the fact that MAC uses symmetric key (the same key is used to verify and authenticate).
@@ -136,8 +136,8 @@ If there exist OWF, then there exist EU-CMA digital signature scheme
 We need to know length $k$ of the message a priory and it uses OWF.
 Let $f$ be a OWF, we define:
 \begin{eqnarray}
-& s_k: & x_1^0...x_k^0 \\\nonumber
-& &  x_1^1...x_k^1 \text{where} x_i^j \in \{0,1\}^n\\\nonumber
+& s_k: & x_0^1...x_0^k \\\nonumber
+& &  x_1^1...x_1^k \text{where} x_i^j \in \{0,1\}^n\\\nonumber
 & v_k: & y_0^1...y_0^k \\\nonumber
 & &  y_1^1...y_1^k \text{ where } y_i^j = f(x_i^j)
 \end{eqnarray}
@@ -171,11 +171,11 @@ Reduction to CRH. If the scheme is not EU-CMA, A can find a collision for $h_k$
  For every new message we construct a new one time $(s_k,v_k)$ pair. Include the verification k for the next message in the signature of the previous. The verification process is recursive. The state is linear in size to the number of messages signed so far.\\
  Two problems: long signatures and signing is statefull.
  \subsection{Signature for multiple messages - stateless}
- We sign on demand using a binary tree (it grows with log of \# of messages), the bit of the message define the pair $(s_k,v_k)$ to use. We don't have to fill all the tree at once, but when a message comes we generate the specific key pair. The problem is that once created we still have to keep track of the secret key  used in a specific node.
+ We sign on demand using a binary tree (it grows with log of \# of messages), the bit of the message define the pair $(s_k,v_k)$ to use. We don't have to fill all the tree at once, but when a message comes we generate the specific key pair. The problem is that once created we still have to keep track of the secret key used in a specific node.
  To get rid of it we can use a randomness $r$ such that $G(1^n,r)$ generate the same pair for the same $r$, but we still have to save the randomness in some place. To get rid of $r$ we can use PRF:
 \begin{itemize}
 \item the key $k$ of the PRF is added to the secret key
-\item to generate a signature on a prefix $m|i$ we use $r = F_k(m|i)$
+\item to generate a signature on a prefix $m|i$ we use $r = F_k(m|i)$ with $m,|i$ the $i$ bit prefix of the message $m$.
 \end{itemize}
 
 
