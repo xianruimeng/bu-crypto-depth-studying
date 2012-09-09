@@ -1,0 +1,294 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+ \definecolor{grey}{rgb}{0.9,0.9,0.9}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+
+
+
+\newcommand{\Succ}{\mathsf{Succ}}
+\newcommand{\Adv}{\mathbf{Adv}}
+ \newcommand{\Exp}{\mathbf{Exp}}
+\begin{document}
+
+
+
+\section{Digital Signature}
+Digital Signatures can be related to MAC (Message Authentication Code) but they are very different. \\
+\textbf{MAC}is a piece of information used to authenticate a message; it takes the message and a secret key and outputs a ''tag''. MAC relies on symmetric encryption.\\
+\textbf{Digital Signatures} are mathematical processes for proving the authenticity of a document or message. A proper digital signature implies that the message or document was created by the actual sender and not someone else. They are commonly used to prove that an electronic signature (a person's actual signature performed on the computer) is authentic. They use asymmetric cryptography.
+
+The most important difference therefore is the fact that given a digital signature, everybody can verify the source of it. Thus with digital signature we can convince a third party that the message is indeed originated by the sender. This cannot be done with MAC, because everybody that can verify can also authenticate due to the fact that MAC uses symmetric key (the same key is used to verify and authenticate).
+
+\subsection{Definition}
+Digital Signatures are composed by 3 ppt algorithms:
+\begin{itemize}
+\item \textbf{Gen}: random key generator that generate the pair $\{s_k,v_k\}$. $s_k$ is the private key used to sign the message and $v_k$ is the public key used to verify the message.
+\begin{center}
+$Gen(1^n) \rightarrow (s_k,v_k)$
+\end{center}
+\item \textbf{Sign}: is the signing algorithm that take on input the private key $s_k$, the message $m$ and generate the signature $s$.
+\begin{center}
+$Sign(s_k,m) \rightarrow s$
+\end{center} 
+\item \textbf{Ver}: is the verification algorithm that receives the public key $v_k$, the message $m$ and the signature $s$ and outputs the accept/reject.
+\begin{center}
+$Ver(v_k,m,s) \in \{accept/reject\}$
+\end{center}
+\end{itemize}
+
+\section{Properties}
+Given a digital signature we want to achieve the following properties:
+\begin{itemize}
+\item Completeness (correctness):
+\begin{equation}
+Prob[Gen(1^n) \rightarrow (s_k,v_k), Ver(v_k, Sign(s_k,m),m) = 1] = 1 (- \epsilon)
+\end{equation}
+with epsilon negligible.
+\item Non repudiation (consistency): \textit{Ver} is deterministic, which means that is not possible to accept a signature in one case but not in another.
+\item Unforgeability: essentially that means that no adversary can come up with a pair $(s^{'},m^{'})$ such that \textit{Ver} accept. In practise we have different type of adversaries, depending on the information the adversary has access and alos different types of forgery\\
+We define three distinct type of attacks (GMR '83):
+\begin{enumerate}
+\item  Key Only Attack - the adversary knows the public verification key.
+\item Known message attack - the adversary knows a set of (message,signature) pairs \underline{not chosen by the attacker}.
+\item Chosen message attack - the adversary has oracle access to the verification algorithm (\underline{no knowledge of the verification key})
+\end{enumerate}
+The types if forgery are (GMR '83):
+\begin{enumerate}
+\item A compute the secret key (\textbf{total break})
+\item A can sign any given message (\textbf{universal forgery})
+\item A can sign a specific message (\textbf{selective forgery})
+\item A can generate a message of its choice and a valid signature for it (\textbf{Existential Forgery})
+\end{enumerate}
+\end{itemize}
+Since we want the scheme to be secure even in the worst case scenario we are going to use the strongest definition of security possible: EU-CMA (namely attack 3 and forgery 4).\\
+\subsection{EU-CMA Game definition GMR '83}
+Valid for any ppt A (an unbounded A can just try all the possible secret key by brute force)
+\begin{itemize}
+\item $Gen(1^n) \rightarrow (s_k,v_k)$
+\item A receives $v_k$
+\item A can repeat the following two steps as needed
+\begin{itemize}
+\item A creates a message $m$
+\item A gets $s \leftarrow Sing(S_k, m)$
+\end{itemize}
+\item A outputs $(m^*,s^*)$
+\item A wins if $Ver(v_k,m^*,s^*)$ accept and $m^*$ wasn't previously signed by the oracle \textit{Sign}
+\end{itemize}
+
+\begin{theorem}
+If there exist OWF, then there exist EU-CMA digital signature scheme
+\end{theorem}
+
+\section{Constructions}
+\subsection{Step 1: one time signature scheme - Lamport '79}
+We need to know length $k$ of the message a priory and it uses OWF.
+Let $f$ be a OWF, we define:
+\begin{eqnarray}
+& s_k: & x_1^0...x_k^0 \\\nonumber
+& &  x_1^1...x_k^1 \text{where} x_i^j \in \{0,1\}^n\\\nonumber
+& v_k: & y_0^1...y_0^k \\\nonumber
+& &  y_1^1...y_1^k \text{ where } y_i^j = f(x_i^j)
+\end{eqnarray}
+Example: \\
+$m = 010111$\\
+$Sign(s_k,m) = x_0^1 x_1^2 x_0^3 x_1^4 x_1^5 x_1^6$ (I chose $x_0,x_1)$ accordingly to the bit of the message\\
+$Ver(v_k,m,s) = \text{ accept if } \forall i: f(x_i^{m_i}) = v_i^{m_i}$
+
+\begin{claim}
+The Lamport scheme is EU-CMA
+\end{claim}
+
+\begin{proof}
+Reduction to OWF. If the scheme is not EU-CMA, A can invert $f$
+\end{proof}
+
+\subsection{Step 2: one time signature for arbitrary legnth messages}
+We need collision resistant hash functions: $H_n = \{h_k\}_{k \in k_n}$, $\forall k, h_k: \{0,1\}^* \rightarrow \{0,1\}^n$.\\ The $s_k$ and $v_k$ are the same as in Lamport scheme.
+\begin{itemize}
+\item Signature: $m^{'} = h_k(m)$, $s = Sing(m^{'}, s_k)$
+\item Verify: $m^{'} = h_k(m), Ver(v_k,m^{'},s)$
+\end{itemize}
+\begin{claim}
+The scheme defined is EU-CMA
+\end{claim}
+\begin{proof}
+Reduction to CRH. If the scheme is not EU-CMA, A can find a collision for $h_k$
+\end{proof}
+
+\subsection{Signature for multiple messages - statefull}
+ For every new message we construct a new one time $(s_k,v_k)$ pair. Include the verification k for the next message in the signature of the previous. The verification process is recursive. The state is linear in size to the number of messages signed so far.\\
+ Two problems: long signatures and signing is statefull.
+ \subsection{Signature for multiple messages - stateless}
+ We sign on demand using a binary tree (it grows with log of \# of messages), the bit of the message define the pair $(s_k,v_k)$ to use. We don't have to fill all the tree at once, but when a message comes we generate the specific key pair. The problem is that once created we still have to keep track of the secret key  used in a specific node.
+ To get rid of it we can use a randomness $r$ such that $G(1^n,r)$ generate the same pair for the same $r$, but we still have to save the randomness in some place. To get rid of $r$ we can use PRF:
+\begin{itemize}
+\item the key $k$ of the PRF is added to the secret key
+\item to generate a signature on a prefix $m|i$ we use $r = F_k(m|i)$
+\end{itemize}
+
+
+\newpage
+
+\section{Commitment schemes}
+A commitment scheme allows one to commit to a value while keeping it hidden, with the ability to reveal the committed value late.\\
+The commitment is a two party protocol between a committer C and a receiver R. It is composed by two phases:
+\begin{enumerate}
+\item \textbf{Commit phase}\\
+INPUT: C gets the message $m \in M$ to commit to, R gets $\bot$\\
+OUTPUT: C output $\bot$, R outputs \textit{committed}
+\item \textbf{Reveal phase}\\
+INPUT: C gets \textit{open}, R gets $\bot$\\
+OUTPUT: C outputs $\bot$, R outputs $m^{'}$ or $\bot$
+\end{enumerate}
+Using the notation:
+\begin{equation}
+[C,R](m,\bot;''open '',\bot) = (\bot,''commited '';\bot,m/\bot)
+\end{equation}
+
+The properties we want to achieve are:
+\begin{itemize}
+\item \textbf{Completeness} (correctness): R always accept in an honest execution.
+\begin{equation}
+Prob[[C,R](m,\bot;''open '',\bot) = (\bot,''commited '';\bot,m)] = 1
+\end{equation}
+\item \textbf{Binding} (protects the receiver): at the end of the commitment stage the receiver knows that the committer cannot longer change the value committed.\\
+
+$\forall$ feasible A $\exists \nu(v)$ negligible : $\forall$ large enough n
+\begin{equation}
+Prob[m_o,m_1 \leftarrow A, b \leftarrow \{0,1\}], [A,R](m_0,m_1,\bot;''open'',\bot = (\bot,''committed'';\bot,m_b)] < {1 \over 2} + \nu(n)
+\end{equation}
+
+We also saw a \textbf{game version} of the binding property:
+\begin{enumerate}
+\item $C^* \rightarrow R$ until R outputs ``committed''
+\item  $A \leftarrow \text{``open 0''}$
+\item $A \leftrightarrow R$ until R outputs open $m_0$
+\item Rewind A,R to the state just after step 1
+\item  $A \leftarrow \text{``open 1''}$
+\item $A \leftrightarrow R$ until R outputs open $m_1$
+\end{enumerate}
+A wins if $m_1 \neq m_0 \neq \bot$
+
+\item \textbf{Secrecy} (hiding) (protects the committer): until the opening phase the values committed is secret.\\
+
+$\forall m_0,m_1 \in M$ and $\forall \text{ ppt } A$:
+\begin{equation}
+[[C,A](m_0,\bot)_2] \approx [[C,A](m_1,\bot)_2]
+\end{equation}
+\end{itemize}
+
+
+An important observation is the following:\\
+a cheating party may just copy someone else’s commitment, which might be sufficient
+in some scenarios. Therefore, the \textbf{commitment scheme must be randomized} to
+avoid premature leaking of information by exhaustive search and it has to include the
+committer’s identity.
+
+\subsection{Perfect, statistical and computational hiding/binding commitment scheme}
+A commitment scheme is \textbf{perfect, statistical, computational}\textbf{ hiding}, if the probability ensembles $[[C,A](m_0,\bot)_2]$ and $[[C,A](m_1,\bot)_2] $ are equal, statistically close, or computationally indistinguishable.\\
+
+A commitment scheme is \textbf{perfectly binding} if:
+\begin{equation}
+Prob[m_o,m_1 \leftarrow A, b \leftarrow \{0,1\}], [A,R](m_0,m_1,\bot;''open'',\bot = (\bot,''committed'';\bot,m_b)] < {1 \over 2}
+\end{equation} 
+\textbf{Statistically binding} if for even computationally unbounded adversaries the biding property holds.\\
+\textbf{Computationally binding} if for any ppt adversary A the binding property holds.
+
+\begin{theorem}
+No commitment scheme can be perfectly hiding and perfectly binding (the same is true for statistical)
+\end{theorem}
+\begin{proof}
+The definition of perfectly hiding says that given any computationally unbounded adversary R, for all $m_0,m_1$:
+\begin{equation}
+[c,R](m_0,-)_2 = [c,R](m_1,-)_2
+\end{equation} 
+Perfect binding implies that there should be no way for a person who commit to a value, to claim that he has committed to another value. Formally, given a computationally unbounded commiter C:
+\begin{equation}
+Prob[m_0,m_1 \leftarrow C, b \leftarrow \{0,1\}], [C,R] (m_0,m_1, -;open\;b,-) = (-,commited;-,m_b)] = {1 \over 2}
+\end{equation}
+If we suppose that an unbounded receiver R cannot figure out the message $m$, after the commitment phase, there must be many solutions with different values of $m$ that satisfy the equation $C(m,v) = c$ where c is the computed value by the commiter using some auxiliary information $v$. But this clearly violate the definition of perfect binding because $c = C(m,v) = C(m^{'},v)$ with $m \neq m^{'}$.
+\end{proof}
+
+\subsection{Some schemes}
+\subsubsection{Perfectly hiding scheme based on discrete log problem}
+Let $G$ be a group of order $p \approx 2^n$
+\begin{itemize}
+\item Commit: \\
+R: randomly choose $g,h \in G$, sends $g,h$\\
+C: randomly select $r \in [1...p]$, send $c = g^r \times h^m$
+R: outputs ``\textit{committed}''
+\item Reveal:\\
+C: sends $r,m$
+R: verify that $g^r \times h^m = c$
+\end{itemize}
+
+Secrecy: $r$ is random, therefore is $c = g^r \times h^m$ and independent of $m$, thus we achieve perfect secrecy.\\
+Binding: if an adversary $C^{*}$ wins the binding game, we can construct A that uses $C^{*}$ to compute the discrete log in G (we use the fact that A has the code of $C^*$ and can rewind it to re run a previous state) 
+
+\subsection{Perfectly binding scheme from any OWP}
+Let $f$ be a OWP with hard core predicate B.
+A one bit commitment follows:
+\begin{itemize}
+\item Commit: \\
+C: randomly choose $r \in \{0,1\}^n$, sends $y = f(r),b= B(r) \oplus m$
+R: outputs ``\textit{committed}''
+\item Reveal:\\
+C: sends $r,m$
+R: verify that $f(r) = y$ and $ m = b \oplus B(r)$
+\end{itemize}
+Secrecy is computational and follow from the fact that if an adversary guess $m$ it can guess $B(x)$.\\
+Binding is perfect and follows from the fact that $f$ is a permutation, therfore giver $r,m$ uniquely determine $y,b$
+
+\end{document}
