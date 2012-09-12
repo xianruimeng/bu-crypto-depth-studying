@@ -38,7 +38,8 @@
 \section{Interactive Proofs ($\ip$)}
 \subsection{``classical" Proofs}
 $\np$ is the class of languages $L$, s.t.
-w\item[Completeness] If $x\in L$, then $\exists V$ s.t. $V(x, proof) = accept$. 
+\begin{description}
+\item[Completeness] If $x\in L$, then $\exists V$ s.t. $V(x, proof) = accept$. 
 \item[Soundness] If $x\notin L$, then $\forall proof^*$, $V(x, proof^*) = reject$.
 \item[Efficiency] $V(x, proof)$ runs in $\poly(|x|)$.
 \end{description} 
@@ -119,6 +120,49 @@ Then send $\rho$ to $V$.
 \begin{lemma}
 The  protocol $\Pi_{GI}$ is in 	$\pzk$.
 \end{lemma}
+
+\section{Sequential composition of ZK}
+If the simulator cannot also get some prior knowledge, then it may not be able to simulate the same conversations. Therefore, we might allow a more powerful simulator to have this prior knowledge, sometimes referred to as an ``advice string", ``auxiliary input", or simply $z$.
+\begin{definition} \textbf{An interactive proof (P,V) with auxiliary input is Zero Knowledge} if for any polynomial time algorithm $V^*$ there exists a polynomial simulator $S$ such that, for any input $x \in L$ and for any $z$.
+$$S(x, z) = [P, V^*](x, (x, z)) $$
+\end{definition}
+\begin{theorem}
+Let $(P, V)$ be an auxiliary-input ZK two-party protocol with $\poly.$ V , and let $(P^k , V^k)$ be the protocol that runs $(P, V)$ sequentially $k$ times (on the same common input). Then $(P^k , V^k )$ is auxiliary input ZK.
+\end{theorem}
+
+\textbf{Proof Sketch: }Consider some ``cheating verifier'' $V^{k*}$ . To construct a simulator $S^*$ for $V^{k*}$ , we first define a ``cheating verifier'' $V^*$ for the original protocol $(P, V )$: $V^*$ treats its auxiliary input $z$ as a state for $V^{k*}$ . It then runs $V^{k*}$ from state $z$, for a single interaction with the prover. $V^*$ then outputs the current internal state of the $V^{k*}$.
+
+By definition, $V^*$ has a simulator $S$. We now construct $S^k$ from $S$: $S^k$ simply runs $S$, $k$ times, where the first run starts with the auxiliary input of $S^k$, and for $i > 1$ the $i$-th run starts with auxiliary input which is the output of the $(i-1)$ run of $S$.
+
+\paragraph{Blum Protocol for Hamiltonian cycle problem: }
+\begin{itemize}
+\item Public input: $x = (x_{i,j})$, the adjacency matrix of an undirected graph on $n$ vertices.
+\item Prover’s auxiliary input: $w$, a hamiltonian cycle in the graph $x$.
+\end{itemize}
+\textbf{Protocol:}
+\begin{description}
+\item[Step 1 (Commitment to permuted graph):] Prover selects a random permutation $\varphi$ on the vertices, and computes a commitment to the permuted graph, i.e. prover sends the matrix of commitments $C = (C_{i,j})$ where $C_{i,j} = \class{Comm}(x_{\varphi(i),\varphi(j)})$.
+\item[Step V2 (Send random query):] The verifier selects a random bit $b \leftarrow_R \zo$ and sends it.
+\item[Step P3 (Open commitments):] If $b = 0$ then the prover sends decommitments for all the commitments sent in Step P1 and in addition sends the permutation $\varphi$ chosen in that step. Otherwise (if $b = 1$) the prover sends decommitments only for the commitments that correspond to the edges of $\varphi(w)$. (i.e., the edges of the permuted Hamiltonian cycle).
+\end{description}
+\textbf{Note: }1). If $b = 0$ then the verifier accepts iff all decommitments are valid and form a graph $x'$ such that $x' = \varphi(x)$ (i.e., $x'_{i,j} = x_{\varphi(i),\varphi(j)}$ for all $i, j \in [n]$). \\
+2).If $b = 1$ then the verifier accepts iff the decommitments sent are for a Hamiltonian cycle and all the opened commitments are to the value 1.
+
+\paragraph{3-colorability:} 
+A coloring of a graph G can be viewed as function $\phi$ from the vertices of $G$ to the set, say $\{r, g, b\}$, such that if $(u, v)$ is an edge in $G$, then $\phi(u)= \phi(v)$. The decision versions of the 3-coloring problem is a $\np$-Complete problem.
+
+We now show a $\zk$ proof for 3-colorability: \\
+\textbf{Input of the protocol: } Graph $G$ with $n$ vertices.\\
+\textbf{Prove's proof: } Prover knows a coloring function $\phi$ in $G$.
+\begin{itemize}
+\item First, the prover chooses a random permutation $\varphi$ over the set $\{r, g, b\}$. He then commits to the (permuted) coloring vertex-by-vertex, and sends the $n$ many commitments $\class{Comm}(\varphi(\phi_1)), ..., \class{Comm}(\varphi(\phi_n))$.
+\item The verifier chooses a random edge $(i, j)$ in G, and sends $(i, j)$ to the prover.
+\item The prover sends decommitments to the $i$th and $j$th commitments that it sent in the first round.
+\item The verifier recovers the decommitted values, denoted $\varphi_i$ and $\varphi_j$. The verifier accepts iff $\varphi_i, \varphi_j \in \{r, g, b\}$ with $\varphi_i \ne \varphi_j$.
+\end{itemize}
+A cheating prover fails to convince the verifier with probability at least $1/n^2$, which is inverse polynomial. Since the graph is not 3-colorable, there must then be at least one edge $(u, v)$ for which $u$ and $v$ are assigned the same color. So if the verifier chooses this edge, he will reject the proof. The probability that the verifier chooses such an edge is (at least) $1/|E| \le 1/n^2$.
+
+As usual, repeating the protocol sufficiently many (but polynomially-many) times (sequentially if we want to preserve the ZK property) yields a proof system with negligible soundness error.
 \end{document}
 
 
