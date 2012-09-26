@@ -1,0 +1,156 @@
+\documentclass[11pt]{article}
+
+\def\shownotes{1}
+
+\usepackage[letterpaper,hmargin=1in,vmargin=1.25in]{geometry}
+
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\usepackage[parfill]{parskip}    
+\usepackage{graphicx}
+\usepackage{amssymb, amsmath, amsthm, amsfonts}
+\usepackage{enumerate}
+\newcommand{\sig}{\text{SIG}}
+\newcommand{\mac}{\text{MAC}}
+
+
+\title{Survey of Key Exchange}
+\author{Xianrui Meng}
+
+\begin{document}
+\maketitle
+\section{Overview}
+\subsection{Security model and requirements}
+\begin{description}
+\item[Authentication] Each party to a KE execution (referred to as a session) needs to be able to
+uniquely verify the identity of the peer with which the session key is exchanged.
+\item[Consistency] If two honest parties establish a common session key then both need to have a
+consistent view of who the peers to the session are. Namely, if a party $A$ establishes a key $K$
+and believes the peer to the exchange to be $B$, then if $B$ establishes the session key $K$ then
+it needs to believe that the peer to the exchange is $A$; and vice-versa.
+\item[Secrecy] If a session is established between two honest peers then no third party should be able
+to learn any information about the resultant session key (in particular, no such third party, watching or interfering with the protocol run, should be able to distinguish the session key from a random key).
+\end{description}
+While the ``authentication" and ``secrecy" requirements are very natural and broadly accepted,
+the requirement of ``consistency" is much trickier and many times overlooked.
+
+\subsection{Identity Protection}
+In particular, it is not possible to design a protocol that will protect both peer identities from active attacks. This is easy to see by noting that the first peer to authenticate itself (i.e. to prove its identity to the other party) must disclose its identity to the other party before it can verify the identity of the latter. Therefore the identity of the first-authenticating peer cannot be protected against an active attacker. In other words, KE protocols may protect both identities from passive attacks and may, at best, protect the identity of one of the peers from disclosure against an active attacker.
+
+\section{The STS Protocols}
+\subsection{BADH}
+``Badly authenticated DH'' (section 3.1 in [Krawczyk 03]).
+
+The protocol does not satisfy the important \emph{consistency requirement}. An active attacker, Eve, can let the forest two messages of the protocol to go uchange between $A$ and $B$, and then it replaces the 3rd message from $A$ to $B$ with the following message from Eve to $B$: $$E, \sig_E(g^y, g^x)$$
+Therefore, $B$ records the exchange of the session key $K_s$ with Eve and any following message arriving to $B$ and authenticated under the key $K_s$ will be interpreted by $B$ as coming from Eve.
+\subsection{The basic STS protocol}
+STS protocol designed by Diffe et al. intended to solve this problem. 
+\begin{description}
+\item[Alice:] Send $g^x$ to Bob.
+\item[Bob:] Send $g^y, B,\{\sig_B(g^x, g^y)\}_{K_s}$ to Alice.
+\item[Alice:] Send $A$, $\{\sig_{A}(g^y, g^x)\}_{K_s}$ to Bob.
+\end{description}
+$\{\ldots\}_K$ denotes encryption of the information under a symmetric encryption function using key $K$. In the STS protocol the key used for encryption is the same as the one output as the session key produced by the exchange. This is a weakness of the protocol since the use of the session key in the protocol leaks information on the key (e.g., the key is not anymore indistinguishable from random). This also violates the basic cryptographic principle of key separation. 
+
+The STS can protect identities: peer's id not needed for your own authentication; it can extend encryption to cover identities (or certificates), i.e. $\{B, \sig_B(g^x, g^y)\}_K$. However, we show here that the misbinding attack applies to this protocol where parties can register public keys without proving knowledge of the corresponding signature key. In this case Eve can register $A$'s public key as its own and then simply replace $A$'s identity (or certificate) in the third message of STS with her own. $B$ verifiers the incoming message and accepts it as coming from Eve, i.e. $E$ will intercept the last from $A$ and send [$E, \{\sig_A(g^y, g^x)\}_K$]. 
+
+STS with MAC (instead of encryption)? The MAC-ed signature variant is not secure even if the system does ensure that the refistrant of a public key knows the corresponding private key. In this attack, Eve intercepts the last message $\sig_E(g^y, g^x) =  \sig_A(g^y, g^x)$. Eve then replaces the certificate of $A$ with her own in the intercepted message and forwards it to $B$, leaving the signature and mac strings unchanged from $A$'s
+ original message). In this case, Eve successfully mounted an identity-misbinding attack against the MACed-signature protocol.
+\section{The ISO Protocol}
+ISO protocol resolves the problem of key-identity binding demonstrated by the misbinding attack on the BADH protocol in a different way. 
+\begin{description}
+\item[Alice:] Send $A, g^x$ to Bob.
+\item[Bob:] Send $B, g^y,\sig_B(g^x, g^y, A)$ to Alice.
+\item[Alice:] Send $\sig_{A}(g^y, g^x, B)$ to Bob.
+\end{description}
+
+The protocol is minimal in the sense that the removal of any of its elements would render the protocol insecure. If we replace the recipient's identity under the signature with the signer's identity results in an insecure protocol, which open to the id-misbinding attack exactly as in the case of BADH.
+
+However, the limitation of the ISO protocol in providing identity protection comes from the fact that in this protocol each party needs to know the identity of the peer before it can produce its own signature. This means no party to the protocol can authenticate the other party before it reveals its own name to that party. This leaves $A$ and $B$'s identities both open to the active attacks.
+
+To prevent this only from the eavesdroppers then the protocol can be built as 4-message protocol as follows:
+\begin{description}
+\item[Alice:] Send $g^x$ to Bob. $\longrightarrow$
+\item[Bob:] Send $g^y, \{B\}_{K_e}$ to Alice.  $\longleftarrow$
+\item[Alice:] Send $\{A,\sig_A(g^x, g^y, B)\}_{K_e}$ to Alice. $\longrightarrow$
+\item[Bob:] Send $\{\sig_{B}(g^y, g^x, A)\}_{K_e}$ to Bob. $\longleftarrow$
+\end{description}
+$K_e$ is an encryption key derived from the DH key $g^{xy}$. We note that with this addition of encryption the ISO protocol looses several of its good properties, e.g. the minimality discussed above and the ability to delay the computation of $g^{xy}$ to the end of the protocol. Also, By signing the peer's identity each party to the protocol leaves a ``provable trace'' in the hands(or disks) of the peer with which they communicate.
+\section{SIGMA Protocol}
+This ``SIGn-and-MAc'' approach is done by computing a MAC function keyed via $g^{xy}$ (or more precisely, via a key derived from $g^{xy}$) and applied to the sender's identity.
+
+\subsection{The basic SIGMA protocol}
+Below is the basic form the SIMGA without id-protection:
+\begin{description}
+\item[Alice:] Send $g^x$ to Bob. $\longrightarrow$
+\item[Bob:] Send $g^y, B, \sig_B(g^x, g^y), \mac_{K_m}(B)$ to Alice.  $\longleftarrow$
+\item[Alice:] Send $\{A, \sig_A(g^y, g^x)\}, \mac_{K_m}(A)$ to Alice. $\longrightarrow$
+\end{description}
+The output of the session key $K_s$ derived from the DH value $g^{xy}$ while the key $K_m$ used as a MAC key in the protocol is also derived from this DH value.
+
+The important point is that SIGMA's security is built in a modular way such that its core cryptographic security is guaranteed independently of the encryption of identities.
+In particular, they provide ``perfect forward secrecy” due to the use of the DH exchange. This assumes that DH exponentials are chosen anew and independently for each session, that the exponents $x$, $y$ used to generate the DH exponentials $g^x, g^y$ are erased as soon as the computation of the key $g^{xy}$ is completed, and that these exponents are not derivable from any other quantity stored in the party’s computer after the session terminates. In case of re-use of DH exponents one must derive the keys used by the session (e.g. $K_m$, $K_s$) in a way that depends on some session-specific non-repeating quantity (such as a nonce or session-id).
+
+\subsection{Protecting identities: SIGMA-I}
+To the basic SIGMA protocol we can add identity protection by simply encrypting identities and signatures using a key $K_e$ derived from $g^{xy}$ ($K_e$ must be computationally independent from the authentication key $K_m $and the session key $K_s$):
+
+
+
+\begin{picture}(300,95) 
+\put(5,75){\makebox(0,0){$A$}}
+\put(125,73){\makebox(0,0){$g^x$}}
+
+\put(255,75){\makebox(0,0){$B$}}
+
+\put(130,53){\makebox(0,0){$g^y, \{B, \sig_B(g^x, g^y), \mac_{K_m}(B)\}_{K_e}$}}
+
+\put(130,33){\makebox(0,0){$\{A, \sig_A(g^y, g^x), \mac_{K_m}(A)\}_{K_e}$}}
+
+\put(30,65){\vector(1,0){200}}
+
+\put(230,45){\vector(-1, 0){200}}
+
+\put(30,25){\vector(1,0){200}}
+\end{picture}
+
+
+This protocol has the property that it protects the identity of the initiator from active attackers and the identity of the responder from passive attackers. 
+
+
+\subsection{A four message variant: SIGMA-R}
+
+\begin{picture}(300,95) 
+\put(5,75){\makebox(0,0){$A$}}
+\put(125,73){\makebox(0,0){$g^x$}}
+
+\put(255,75){\makebox(0,0){$B$}}
+
+\put(125,53){\makebox(0,0){$g^y$}}
+
+\put(130,33){\makebox(0,0){$A, \sig_A(g^y, g^x), \mac_{K_m}(A)$}}
+
+\put(130,13){\makebox(0,0){$B, \sig_B(g^x, g^y), \mac_{K_m}(B)$}}
+
+\put(30,65){\vector(1,0){200}}
+
+\put(230,45){\vector(-1, 0){200}}
+
+\put(30,25){\vector(1,0){200}}
+
+\put(230,5){\vector(-1, 0){200}}
+\end{picture}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
