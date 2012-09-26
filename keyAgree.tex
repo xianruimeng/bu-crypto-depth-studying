@@ -5,12 +5,46 @@
 \usepackage[letterpaper,hmargin=1in,vmargin=1.25in]{geometry}
 
 \geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
-%\usepackage[parfill]{parskip}    
+\usepackage[parfill]{parskip}    
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+
 \usepackage{graphicx}
 \usepackage{amssymb, amsmath, amsthm, amsfonts}
 \usepackage{enumerate}
+\newcommand{\adv}{\mathcal{A}}
+
 \newcommand{\sig}{\text{SIG}}
 \newcommand{\mac}{\text{MAC}}
+\newcommand{\class}[1]{{\ensuremath{\mathsf{#1}}}}
+\newcommand{\negl}{\class{negl}}
+
+\newcommand{\Adv}{\class{Adv}}
+\newcommand{\Succ}{\class{Succ}}
+\newcommand{\sid}{\class{sid}}
+\newcommand{\pid}{\class{pid}}
+\newcommand{\sk}{\class{sk}}
+\newcommand{\iU}{\ensuremath{\Pi^i_U}}
+\newcommand{\jU}{\ensuremath{\Pi^j_{U'}}}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
 
 
 \title{Survey of Key Exchange}
@@ -18,7 +52,7 @@
 
 \begin{document}
 \maketitle
-\section{Overview}
+\section{Overview of SIGMA}
 \subsection{Security model and requirements}
 \begin{description}
 \item[Authentication] Each party to a KE execution (referred to as a session) needs to be able to
@@ -36,8 +70,8 @@ the requirement of ``consistency" is much trickier and many times overlooked.
 \subsection{Identity Protection}
 In particular, it is not possible to design a protocol that will protect both peer identities from active attacks. This is easy to see by noting that the first peer to authenticate itself (i.e. to prove its identity to the other party) must disclose its identity to the other party before it can verify the identity of the latter. Therefore the identity of the first-authenticating peer cannot be protected against an active attacker. In other words, KE protocols may protect both identities from passive attacks and may, at best, protect the identity of one of the peers from disclosure against an active attacker.
 
-\section{The STS Protocols}
-\subsection{BADH}
+\subsection{The STS Protocols}
+\subsubsection{BADH}
 ``Badly authenticated DH'' (section 3.1 in [Krawczyk 03]).
 
 The protocol does not satisfy the important \emph{consistency requirement}. An active attacker, Eve, can let the forest two messages of the protocol to go uchange between $A$ and $B$, and then it replaces the 3rd message from $A$ to $B$ with the following message from Eve to $B$: $$E, \sig_E(g^y, g^x)$$
@@ -55,7 +89,7 @@ The STS can protect identities: peer's id not needed for your own authentication
 
 STS with MAC (instead of encryption)? The MAC-ed signature variant is not secure even if the system does ensure that the refistrant of a public key knows the corresponding private key. In this attack, Eve intercepts the last message $\sig_E(g^y, g^x) =  \sig_A(g^y, g^x)$. Eve then replaces the certificate of $A$ with her own in the intercepted message and forwards it to $B$, leaving the signature and mac strings unchanged from $A$'s
  original message). In this case, Eve successfully mounted an identity-misbinding attack against the MACed-signature protocol.
-\section{The ISO Protocol}
+\subsection{The ISO Protocol}
 ISO protocol resolves the problem of key-identity binding demonstrated by the misbinding attack on the BADH protocol in a different way. 
 \begin{description}
 \item[Alice:] Send $A, g^x$ to Bob.
@@ -75,10 +109,10 @@ To prevent this only from the eavesdroppers then the protocol can be built as 4-
 \item[Bob:] Send $\{\sig_{B}(g^y, g^x, A)\}_{K_e}$ to Bob. $\longleftarrow$
 \end{description}
 $K_e$ is an encryption key derived from the DH key $g^{xy}$. We note that with this addition of encryption the ISO protocol looses several of its good properties, e.g. the minimality discussed above and the ability to delay the computation of $g^{xy}$ to the end of the protocol. Also, By signing the peer's identity each party to the protocol leaves a ``provable trace'' in the hands(or disks) of the peer with which they communicate.
-\section{SIGMA Protocol}
+\subsection{SIGMA Protocol}
 This ``SIGn-and-MAc'' approach is done by computing a MAC function keyed via $g^{xy}$ (or more precisely, via a key derived from $g^{xy}$) and applied to the sender's identity.
 
-\subsection{The basic SIGMA protocol}
+\subsubsection{The basic SIGMA protocol}
 Below is the basic form the SIMGA without id-protection:
 \begin{description}
 \item[Alice:] Send $g^x$ to Bob. $\longrightarrow$
@@ -88,9 +122,9 @@ Below is the basic form the SIMGA without id-protection:
 The output of the session key $K_s$ derived from the DH value $g^{xy}$ while the key $K_m$ used as a MAC key in the protocol is also derived from this DH value.
 
 The important point is that SIGMA's security is built in a modular way such that its core cryptographic security is guaranteed independently of the encryption of identities.
-In particular, they provide ``perfect forward secrecy” due to the use of the DH exchange. This assumes that DH exponentials are chosen anew and independently for each session, that the exponents $x$, $y$ used to generate the DH exponentials $g^x, g^y$ are erased as soon as the computation of the key $g^{xy}$ is completed, and that these exponents are not derivable from any other quantity stored in the party’s computer after the session terminates. In case of re-use of DH exponents one must derive the keys used by the session (e.g. $K_m$, $K_s$) in a way that depends on some session-specific non-repeating quantity (such as a nonce or session-id).
+In particular, they provide ``perfect forward secrecy‚Äù due to the use of the DH exchange. This assumes that DH exponentials are chosen anew and independently for each session, that the exponents $x$, $y$ used to generate the DH exponentials $g^x, g^y$ are erased as soon as the computation of the key $g^{xy}$ is completed, and that these exponents are not derivable from any other quantity stored in the party‚Äôs computer after the session terminates. In case of re-use of DH exponents one must derive the keys used by the session (e.g. $K_m$, $K_s$) in a way that depends on some session-specific non-repeating quantity (such as a nonce or session-id).
 
-\subsection{Protecting identities: SIGMA-I}
+\subsubsection{Protecting identities: SIGMA-I}
 To the basic SIGMA protocol we can add identity protection by simply encrypting identities and signatures using a key $K_e$ derived from $g^{xy}$ ($K_e$ must be computationally independent from the authentication key $K_m $and the session key $K_s$):
 
 
@@ -116,7 +150,7 @@ To the basic SIGMA protocol we can add identity protection by simply encrypting 
 This protocol has the property that it protects the identity of the initiator from active attackers and the identity of the responder from passive attackers. 
 
 
-\subsection{A four message variant: SIGMA-R}
+\subsubsection{A four message variant: SIGMA-R}
 
 \begin{picture}(300,95) 
 \put(5,75){\makebox(0,0){$A$}}
@@ -139,18 +173,58 @@ This protocol has the property that it protects the identity of the initiator fr
 \put(230,5){\vector(-1, 0){200}}
 \end{picture}
 
+\section{Password Authenticate Key exchange Protocol}
+Password-based protocols allow users to bootstrap even a very weak (e.g., short) shared secret into a (much longer) cryptographic key. The security guaranteed by password-based protocols (roughly speaking) is that if the password is chosen uniformly from a dictionary of size $D$ then an adversary who initiates $Q$ \emph{on-line} attacks $-$ i.e., who actively interferes in $Q$ sessions $-$ has ``advantage'' at most $Q/D$. In particular, ``off-line‚Äù dictionary attacks where an adversary enumerates all passwords from the (presumably small) dictionary of potential passwords, and tries to match observed protocol executions to each one, are of no use.
 
+Goldreich and Lindell \cite{GoldreichL06} gave the first PAKE protocol in the standard model (and without requiring any additional setup). Katz, Ostrovsky, and Yung (KOY protocol) demonstrated the first efficient PAKE protocol with a proof of security based on standard assumptions. These works all require a CRS.
+
+
+\subsection{PAKE setting and adversarial model}
+The formal security model for password key exchange is presented in \cite{DBLP:conf/eurocrypt/BellarePR00}, Gennaro and Lindell presented a framework for password-base KE.
+
+\paragraph{Execution of the protocol:} We denote instance $i$ of user $U$ as $\Pi^i_U$. Each instance may be used only once. The adversary is given oracle access to these different instances; furthermore,
+each instance maintains (local) state which is updated during the course of the experiment.
+
+$\sid^i_U$, $\pid^i_U$, $\sk^i_U$ denote the \emph{session id, partner id, and session key}, respectively. The partner id denotes the user with whom $\Pi^i_U$ believes it is interacting; we require $\pid^i_U \ne U$.
+
+\textbf{Partnering: }Let $U, U' \in \class{User}$. Instances $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered if : (1) $\sid^i_U = \sid^j_{U'} \ne \text{NULL}$; (2) $\pid^i_U = U'$ and $pid^j_{U'} = U$.
+
+\textbf{Correctness: }If $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered then both of them accept and $\sk^i_U = \sk^j_{U'}$, i.e. they both accept and conclude with the same session key.
+
+\textbf{Advantage of the adversary: }Informally, the adversary can succeed in two ways: (1) if it guesses
+the bit b used by the Test oracle (this implies secrecy of session keys), or (2) if it causes an instance to accept without there being a corresponding partner (this implies mutual authentication). 
+
+The adversary's interaction with various instances is modeled via access to the following oracles:
+\begin{enumerate}
+\item $\class{Send}(U; i; M)$ -- This sends message $M$ to instance $\Pi^i_U$
+\item $\class{Execute}(U; i; U'; j)$ -- If $\iU$ and $\jU$ have not yet been used, this oracle executes the protocol between these instances and gives the resulting transcript to the adversary.
+\item $\class{Reveal}(U, i)$ -- This outputs the session key $\sk^i_U$ , modeling leakage of session keys.
+\item $\class{Test}(U, i)$ -- A random bit $b$ is chosen; if $b = 1$ the adversary is given $\sk^i_U$, and if $b = 0$ the adversary is given a session key chosen uniformly from the appropriate space.
+\end{enumerate}
+
+An adversary $\adv$ succeeds if $\adv$ makes a single query $\class{Test}(U; i)$ to a fresh instance $\iU$, and outputs a bit $b'$ with $b=b'$ (recall that b is the bit chosen by the $\class{Test}$ oracle).
+
+We denote the event that the adversary succeeds by $\class{Succ}$. The advantage of $\adv$ in attacking protocol $\Pi$ is $\Adv_{\adv, \pi}(k) = 2\Pr[\Succ] - 1$. An instance $\iU$ represents an on-line attack if, at some point, the adversary queried $\class{Send}(U; i; *)$. The number of on-line attacks represents a bound on the number of passwords the adversary could have tested in an on-line fashion.
+
+
+\begin{defn}
+Protocol $\Pi$ is a secure PAKE protocol with explicit mutual authentication if, for all
+dictionary sizes $\{D_n\}$ and for all ppt adversaries $\adv$ making at most $Q(n)$ on-line attacks, there
+exists a negligible function $\negl(\cdot)$ such that $\Adv_{\adv,\Pi} = Q(n)/D_n + \negl(n)$.
+\end{defn}
+ 
+ 
+\subsection{More topics}
+\begin{itemize}
+\item PAKE in the RO model, KOY protocol.
+\item Smooth projective hash functions.
+\item Man-in-the-middle attacks.
+\item Different frameworks on PAKEs. (UC-secure PAKE)
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{crypto}
 
 \end{document}
-
-
-
-
-
-
-
-
-
-
 
 
