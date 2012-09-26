@@ -1,0 +1,138 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+
+\renewcommand{\L}{\mathcal{L}}
+\newcommand{\V}{\mathcal{V}}
+\renewcommand{\P}{\mathcal{P}}
+\newcommand{\poly}{\mathrm{poly}}
+\newcommand{\binary}{\{0,1\}}
+\newcommand{\set}[1]{\left\{#1\right\}}
+
+\newtheorem{theorem}{Theorem}[section]
+
+\newcommand{\proref}[1]{Protocol~\protect\ref{#1}}
+
+\newenvironment{boxfig}[2]{\begin{figure}[#1]\fbox{\begin{minipage}{\linewidth}
+                        \vspace{0.2em}
+                        \makebox[0.025\linewidth]{}
+                        \begin{minipage}{0.95\linewidth}
+            {\small{
+                        #2 }}
+                        \end{minipage}
+                        \vspace{0.2em}
+                        \end{minipage}}}{\end{figure}}
+
+
+\newcommand{\pprotocol}[5]{
+  {\begin{figure}[#4]
+      \begin{center}
+        \fbox{ \small \hbox{
+            \begin{minipage}{.98\linewidth}
+              \begin{center}
+                \textbf{#1}
+              \end{center}
+              #5
+            \end{minipage}
+          } }
+        \caption{\label{#3} #2}
+      \end{center}
+      \vspace{-3ex}
+    \end{figure}
+} }
+
+
+\newcommand{\protocol}[4]{
+\begin{boxfig}{htbp}{
+\begin{center}
+{\bf #1}
+\end{center}
+    #4
+\vspace{0.5ex} } \caption{\label{#3} #2}
+\end{boxfig}
+}
+
+
+\begin{document}
+
+\section{Real/Ideal Paradigm for Secure Computation}
+We would like to define what it means for a protocol to be secure.  That is, if a set of participants $P_1,..., P_n$ wish to engage in a protocol, what does it mean for the protocol to be secure?  Indeed, even in the simple case of a secure channel there are several properties we could mean by security:
+\begin{itemize}
+\item Confidentiality: the adversary does not learn any information about the message\footnote{We'll cover what any information means in a minute.}.
+\item Authenticity: the adversary cannot send messages and the sender of each message is known.
+\item Anonymity: the adversary cannot learn who is sending messages
+\item Non-repudiation: participants can prove to the outside world what messages were sent.
+\end{itemize}
+These properties are in conflict and it is not clear what is meant by ``security''.  A simulation based definition was proposed by Goldwasser and Micali in~\cite{goldwasserMicali}:
+
+Semantic Security: We say $E$ is semantically security (SEM-CPA) for message domain $M$ and leakage function $\ell()$ if there exists a polynomial time $S$ such that for all PPT $D$ the following games are indistinguishable:
+\begin{center}
+\begin{tabular}{c|c}
+\begin{minipage}{3in}
+\begin{tabbing}
+123\=123\=123\=123\=123\=\kill
+\textbf{Experiment} $Exp^{\mathrm{sim}}_{E,D, S}(n)$: \\
+$(pk,s_{sim}) \leftarrow S(1^n)$ \\
+$(m, s_{dist})\leftarrow D(pk)$\\
+$c\leftarrow S(s_{sim}, \ell(m))$\\
+$b\leftarrow D(c, s_{dist})$
+\end{tabbing} \end{minipage} &
+\begin{minipage}{3in}
+\begin{tabbing}
+123\=123\=123\=123\=123\=\kill
+\textbf{Experiment} $Exp^{\mathrm{adv}}_{E, D}(k)$: \\
+$(pk,sk) \leftarrow Gen(1^k)$ \\
+$(m, s_{dist})\leftarrow D(pk)$\\
+$c\leftarrow Enc(pk, m)$\\
+$b\leftarrow D(c, s_{dist})$
+\end{tabbing} \end{minipage} 
+\end{tabular}
+\end{center}
+Roughly, this definition says that (for some leakage function $\ell(\cdot)$) for any adversary with access to the actual protocol there is a simulator that is able to produce an indistinguishable view with access to only $\ell(\cdot)$.  A similar flavor of definition exists in zero-knowledge proofs~\cite{goldwasserMR85}.  We say a protocol $\pi$ is zero-knowledge if for all PPT verifiers $V^*$ there exists a $PPT\, S$ such that $\forall (x,w)\in R, \forall z$
+\[
+[P, V^*]((x,w),(x, z))_2 \approx S(x, z)
+\]
+Roughly this definition says that anything the verifier can learn by interacting with the prover can be learned by a simulator without this interaction.  The only bit of information learned is whether $x\in L$.  Thus, these two applications give an intuition that we can expand to general applications.  Roughly, we would like to say that a protocol is secure if there is some other world where a simulator receives a well-defined set of information and it is impossible to tell which world is being executed.  We will call this a trusted party paradigm.
+
+\subsection{Trusted-party paradigm}
+We'll begin by defining the trusted-party paradigm and then discuss concerns covered by the paradigm.  Let $f(\cdot, ..., \cdot)$ be a formal specification and let $\pi$ be a protocol that implements $f$.  We define the ideal world as the following steps:
+\begin{enumerate}
+\item Initialize parties $P_1,..., P_n$
+\item Each party provides an input $x_i$ to $\mathcal{F}$
+\item $\mathcal{F}$ computes $(y_1,..., y_n)\leftarrow f(x_1,..., x_n)$
+\item $\mathcal{F}$ gives $y_i$ to party $P_i$
+\end{enumerate}
+We say that $\pi$ securely emulates $f$ if $\forall \, PPT\, A, \exists \, PPT\, S$ such that 
+\[
+[\pi(P_1, ..., P_n), A]\approx [\mathcal{F}(P_1,..., P_n), S]
+\]
+Thus, anything the adversary $A$ learns can be learned by $S$ interacting with an ideal functionality.  This definition allows $\mathcal{F}$ to be different from $f$, it may allow some leakage functions~($\ell(\cdot)$ in the case of semantic security of encryption).  However, these functions are explicit and it is clear what the simulator can learn.  Thus, by extension we are able to measure exactly what information is being learned by the adversary.  This definition covers several desiderata:
+\begin{itemize}
+\item Correctness: The protocol should output the function value if all parties are acting honestly
+\item Secrecy: The protocol should only allow the adversary to learn the output values of corrupted parties\footnote{We allow an adversary to send a special corrupt message where they learn a parties entire state and control that party in future steps.  We give the simulator the same power.}
+\item Input fairness: No party receives output from $\mathcal{F}$ until all parties have committed to their input, thus one parties input cannot depend on another parties.  This can be seen as a special case of influencing the output of the protocol.  The adversary should only be able to influence the outcome of the function by setting inputs.
+\item No side-info: We would like the parties only to have the output of the function and their input.  The only side-channel information they should be able to compute should be computable from these.  For instance, if the output is a random value no party should have a preimage of this value under a TDP.
+\item Fairness: fairness says that all parties receive their outputs or no parties do.  This may or may not be covered depending on $\mathcal{F}$.  
+\end{itemize}
+
+We will consider how to implement this case in situations of increasing complexity.  In order we will cover: 1) two parties executing a single protocol 2) multiple parties executing a single protocol 3) multiple parties executing multiple protocols but only non-concurrently 4) general composition of protocols~\cite{canettiUC}.  We follow the same outline as~\cite{canettiTutorial}.
+
+\subsection{Basic Setting - Two parties}
+
+\subsection{Basic Setting - Multiple parties}
+
+\subsection{Issues with concurrence}
+\bibliographystyle{plain}
+\bibliography{crypto}
+\end{document}
