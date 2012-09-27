@@ -34,10 +34,12 @@
 \newcommand{\sid}{\class{sid}}
 \newcommand{\pid}{\class{pid}}
 \newcommand{\sk}{\class{sk}}
+\newcommand{\user}{\class{User}}
 \newcommand{\iU}{\ensuremath{\Pi^i_U}}
 \newcommand{\jU}{\ensuremath{\Pi^j_{U'}}}
 
-
+\newcommand{\acc}{\class{acc}}
+\newcommand{\term}{\class{term}}
 
 \newtheorem{thm}{Theorem}[section]
 \newtheorem{lem}[thm]{Lemma}
@@ -74,10 +76,10 @@ In particular, it is not possible to design a protocol that will protect both pe
 \subsubsection{BADH}
 ``Badly authenticated DH'' (section 3.1 in [Krawczyk 03]).
 
-The protocol does not satisfy the important \emph{consistency requirement}. An active attacker, Eve, can let the forest two messages of the protocol to go uchange between $A$ and $B$, and then it replaces the 3rd message from $A$ to $B$ with the following message from Eve to $B$: $$E, \sig_E(g^y, g^x)$$
+The protocol does not satisfy the important \emph{consistency requirement}. An active attacker, Eve, can let the first two messages of the protocol to go unchange between $A$ and $B$, and then it replaces the 3rd message from $A$ to $B$ with the following message from Eve to $B$: $$E, \sig_E(g^y, g^x)$$
 Therefore, $B$ records the exchange of the session key $K_s$ with Eve and any following message arriving to $B$ and authenticated under the key $K_s$ will be interpreted by $B$ as coming from Eve.
 \subsection{The basic STS protocol}
-STS protocol designed by Diffe et al. intended to solve this problem. 
+STS protocol designed by Diffie et al. \cite{DiffieOW92} intended to solve this problem. 
 \begin{description}
 \item[Alice:] Send $g^x$ to Bob.
 \item[Bob:] Send $g^y, B,\{\sig_B(g^x, g^y)\}_{K_s}$ to Alice.
@@ -113,7 +115,7 @@ $K_e$ is an encryption key derived from the DH key $g^{xy}$. We note that with t
 This ``SIGn-and-MAc'' approach is done by computing a MAC function keyed via $g^{xy}$ (or more precisely, via a key derived from $g^{xy}$) and applied to the sender's identity.
 
 \subsubsection{The basic SIGMA protocol}
-Below is the basic form the SIMGA without id-protection:
+See CK02 \cite{CanettiK02} showed the rigorous proof on SIGMA protocol. Below is the basic form the SIMGA without id-protection:
 \begin{description}
 \item[Alice:] Send $g^x$ to Bob. $\longrightarrow$
 \item[Bob:] Send $g^y, B, \sig_B(g^x, g^y), \mac_{K_m}(B)$ to Alice.  $\longleftarrow$
@@ -180,19 +182,17 @@ Goldreich and Lindell \cite{GoldreichL06} gave the first PAKE protocol in the st
 
 
 \subsection{PAKE setting and adversarial model}
-The formal security model for password key exchange is presented in \cite{DBLP:conf/eurocrypt/BellarePR00}, Gennaro and Lindell presented a framework for password-base KE.
 
-\paragraph{Execution of the protocol:} We denote instance $i$ of user $U$ as $\Pi^i_U$. Each instance may be used only once. The adversary is given oracle access to these different instances; furthermore,
+The formal security model for password key exchange is presented in \cite{DBLP:conf/eurocrypt/BellarePR00} (in ideal cipher/RO model), Gennaro and Lindell \cite{DBLP:journals/tissec/GennaroL06} presented a framework for password-base KE.
+
+\textbf{Participants, passwords, and initialization.} Prior to any execution of the protocol there is an
+initialization phase during which public parameters and a CRS are established. We assume a fixed set $\user$ of protocol participants (also called principals or users). For every distinct $U; U' \in \user$, users $U$ and $U'$ share a password $pw_{U;U'}$. We assume that each $pw_{U;U'}$ is chosen independently and uniformly from the set $[D]= \{1 \ldots D\}$ for some integer $D$.
+
+\textbf{Execution of the protocol:} We denote instance $i$ of user $U$ as $\Pi^i_U$. Each instance may be used only once. The adversary is given oracle access to these different instances; furthermore,
 each instance maintains (local) state which is updated during the course of the experiment.
 
-$\sid^i_U$, $\pid^i_U$, $\sk^i_U$ denote the \emph{session id, partner id, and session key}, respectively. The partner id denotes the user with whom $\Pi^i_U$ believes it is interacting; we require $\pid^i_U \ne U$.
-
-\textbf{Partnering: }Let $U, U' \in \class{User}$. Instances $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered if : (1) $\sid^i_U = \sid^j_{U'} \ne \text{NULL}$; (2) $\pid^i_U = U'$ and $pid^j_{U'} = U$.
-
-\textbf{Correctness: }If $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered then both of them accept and $\sk^i_U = \sk^j_{U'}$, i.e. they both accept and conclude with the same session key.
-
-\textbf{Advantage of the adversary: }Informally, the adversary can succeed in two ways: (1) if it guesses
-the bit b used by the Test oracle (this implies secrecy of session keys), or (2) if it causes an instance to accept without there being a corresponding partner (this implies mutual authentication). 
+$\sid^i_U$, $\pid^i_U$, $\sk^i_U$ denote the \emph{session id, partner id, and session key}, respectively. The partner id denotes the user with whom $\Pi^i_U$ believes it is interacting; we require $\pid^i_U \ne U$. $\acc^i_U$ and $\term^i_U$ are boolean variables denoting whether a given instance has accepted or
+terminated, respectively.
 
 The adversary's interaction with various instances is modeled via access to the following oracles:
 \begin{enumerate}
@@ -202,10 +202,18 @@ The adversary's interaction with various instances is modeled via access to the 
 \item $\class{Test}(U, i)$ -- A random bit $b$ is chosen; if $b = 1$ the adversary is given $\sk^i_U$, and if $b = 0$ the adversary is given a session key chosen uniformly from the appropriate space.
 \end{enumerate}
 
-An adversary $\adv$ succeeds if $\adv$ makes a single query $\class{Test}(U; i)$ to a fresh instance $\iU$, and outputs a bit $b'$ with $b=b'$ (recall that b is the bit chosen by the $\class{Test}$ oracle).
+\textbf{Partnering: }Let $U, U' \in \class{User}$. Instances $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered if : (1) $\sid^i_U = \sid^j_{U'} \ne \text{NULL}$; (2) $\pid^i_U = U'$ and $\pid^j_{U'} = U$.
 
-We denote the event that the adversary succeeds by $\class{Succ}$. The advantage of $\adv$ in attacking protocol $\Pi$ is $\Adv_{\adv, \pi}(k) = 2\Pr[\Succ] - 1$. An instance $\iU$ represents an on-line attack if, at some point, the adversary queried $\class{Send}(U; i; *)$. The number of on-line attacks represents a bound on the number of passwords the adversary could have tested in an on-line fashion.
+\textbf{Correctness: }If $\Pi^i_U$ and $\Pi^j_{U'}$ are partnered then both of them accept and $\sk^i_U = \sk^j_{U'}$, i.e. they both accept and conclude with the same session key.
 
+\textbf{Advantage of the adversary: }To formally define the adversary's success, we first define a notion of \emph{freshness}. An instance $\iU$ is \emph{fresh} unless one of the following is true at the conclusion of the experiment: 1). at some point, the adversary queried $\class{Reveal}(U, i)$; or 2). at some point, the adversary queried $\class{Reveal}(U', j)$, where $\iU$ and $\jU$ are partnered.
+
+We allow the adversary to succeed only if its $\class{Test}$ query is made to a \emph{fresh} instance; this is necessary for any reasonable definition of security.
+
+Informally, the adversary can succeed in two ways: if it guesses the bit b used by the $\class{Test}$ oracle to a \emph{fresh} instance. 
+An adversary $\adv$ succeeds if it makes a single query $\class{Test}(U; i)$ to a fresh instance $\iU$, and outputs a bit $b'$ with $b'= b$ (recall that b is the bit chosen by the $\class{Test}$ oracle).We denote the event that the adversary succeeds by $\class{Succ}$. The \emph{advantage} of $\adv$ in attacking protocol $\Pi$ is given by $\Adv_{\adv, \pi}(k) = 2\Pr[\Succ] - 1$ (where the probability is taken over the random coins used by the adversary and the random coins used
+during the course of the experiment (including the initialization phase).
+An instance $\iU$ represents an on-line attack if, at some point, the adversary queried $\class{Send}(U; i; *)$, and (2) at some point, the adversary queried $\class{Reveal}(U; i)$ or $\class{Test}(U; i)$. The number of on-line attacks represents a bound on the number of passwords the adversary could have tested in an \emph{on-line} fashion.
 
 \begin{defn}
 Protocol $\Pi$ is a secure PAKE protocol with explicit mutual authentication if, for all
@@ -216,7 +224,7 @@ exists a negligible function $\negl(\cdot)$ such that $\Adv_{\adv,\Pi} = Q(n)/D_
  
 \subsection{More topics}
 \begin{itemize}
-\item PAKE in the RO model, KOY protocol.
+\item PAKE in the RO model \cite{DBLP:conf/eurocrypt/BellarePR00}, KOY protocol \cite{DBLP:journals/jacm/KatzOY09}.
 \item Smooth projective hash functions.
 \item Man-in-the-middle attacks.
 \item Different frameworks on PAKEs. (UC-secure PAKE)
@@ -226,5 +234,15 @@ exists a negligible function $\negl(\cdot)$ such that $\Adv_{\adv,\Pi} = Q(n)/D_
 \bibliography{crypto}
 
 \end{document}
+
+
+
+
+
+
+
+
+
+
 
 
