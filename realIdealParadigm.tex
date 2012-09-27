@@ -20,7 +20,44 @@
 \newcommand{\binary}{\{0,1\}}
 \newcommand{\set}[1]{\left\{#1\right\}}
 
-\newtheorem{theorem}{Theorem}[section]
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+
 
 \newcommand{\proref}[1]{Protocol~\protect\ref{#1}}
 
@@ -129,9 +166,69 @@ Thus, anything the adversary $A$ learns can be learned by $S$ interacting with a
 We will consider how to implement this case in situations of increasing complexity.  In order we will cover: 1) two parties executing a single protocol 2) multiple parties executing a single protocol 3) multiple parties executing multiple protocols but only non-concurrently 4) general composition of protocols~\cite{canettiUC}.  We follow the same outline as~\cite{canettiTutorial}.
 
 \subsection{Basic Setting - Two parties}
+\subsubsection{Interactive Turing Machines}
+We fill follow the interactive Turing machine (ITM) model of computation from~\cite{goldwasserMR85}.  An interactive Turing machine is a standard Turing machine with three tapes: 1) \textbf{input tape} 2) \textbf{incoming communication tape} 3) \textbf{subroutine output tape}.  The input tape provides the initial input provided by the ``calling'' Turing machine.  the subroutine output tape allows ``called'' Turing machines to write back up the stack.  The communication tape allows for multiple ITMs to interact ``over-the-network''.  The communication is performed by assigning each ITM a unique address~(perhaps more than one) describing a set of addresses of permitted destinations for each ITM.  This is know s the \textbf{control function}.  Finally, we provide a \textbf{global input} to all instances.
 
+We say that a ITM $M$ is polynomial time if there exists a polynomial $p(\cdot)$ such that the steps taken by $M$ is at most $p(n)$ where $n$ is the difference between the input bits to $M$ and the bits it writes on input tapes to other ITMs.  This prevents recursion where each machine in the stack performs a polynomial number of operations but the overall number of operations of exponential.  Indeed if all ITMs run in polynomial time, then the system of communicating ITMs completes in polynomial time in the overall inputs.
+
+We now define a protocol as an ITM.  This will contain code for each participant and initiate each ITM.
+
+\subsubsection{Two party security}
+Consider a two-party protocol $\pi$.  We will assume an environment $\mathcal{E}$ adversary $\mathcal{A}$, and an entity $P$ that honestly runs the protocol $\pi$.  The execution is as follows
+
+\begin{enumerate}
+\item $\mathcal{E}$ is initiated with its input.
+\item $\mathcal{A}$ provides inputs to $\mathcal{A}$ and $P$.
+\item $\mathcal{E}$ activates either $\mathcal{A}$ or $P$ which runs until they activate the other party~(or an output provided to $\mathcal{E}$).
+\item $\mathcal{A}, P$ continue until both parties write outputs to $\mathcal{E}$.
+\end{enumerate}
+
+We denote this process as $EXEC_{\pi, \mathcal{A, E}}(x)$ where $x$ is the initial input of $\mathcal{E}$.
+
+We now describe the ideal process.  Let $f$ be a (possibly randomized) function $f:(\{0,1\}^*)^2\rightarrow (\{0,1\}^*)^2$ to be evaluated.  We add an additional entity to the system $\mathcal{T}_f$.  $P$ now runs the following protocol, when it receives its input value it forwards it to $\mathcal{T}_f$ when it receives an output from $\mathcal{T}_f$ it forwards this value to $\mathcal{E}$.  $\mathcal{T}_f$ does the following, when it receives both inputs it computes the function $f$ and returns the output value to $\mathcal{A}$ and upon receiving okay from $\mathcal{A}$ gives the output value to $p$\footnote{We can allow the adversary to have additional powers over the trusted functionality as well.  These will not be necessary in the two party setting but become important in more general settings.}.  We denote this interaction as $IDEAL_{f,\mathcal{A}, \mathcal{E}}(x)$.
+
+\begin{definition}
+A two-party protocol $\pi$ is securely evaluates $f$ if for any $PT$ adversary $\mathcal{A}$ there exists a PT adversary $S$ such that for all $PT$ environments $\mathcal{E}$ that output only one bit:
+\[
+IDEAL_{f,S,\mathcal{E}}\approx EXEC_{\pi, \mathcal{A}, \mathcal{E}}
+\]
+\end{definition}
+
+Intuitively, this definition says that any bad behavior caused by $\mathcal{A}$ must be reproducible by $\mathcal{S}$ when interacting only with the ideal functionality.  Note that $\mathcal{S}$ must select its input before seeing any output.  $\mathcal{E}$ may provide some side information to $\mathcal{A}$ about $P$'s input and security must hold in this case as well.  Our definition does not satisfy fairness as $\mathcal{A}$ always decides if $P$ receives its output.
+\begin{itemize}
+\item Database intersection
+\item Common Randomness
+\item Zero knowledge.  The definition given is for a ZKPoK and is only secure against computationally bounded provers.
+\end{itemize}
 \subsection{Basic Setting - Multiple parties}
+Having consider the two-party setting, we now consider the case of multiparty tasks.  The largest change is that the adversary is now a separate party instead of a participant.  All participants may only send their messages to $\mathcal{A}$ which are delivered at $\mathcal{A}$'s behest.  Furthermore, we allow $\mathcal{A}$ to send a special $\mathtt{corrupt}$ message to any participant $P_i$.  At this point $\mathcal{A}$ receives all of $P_i$ current state and sends messages as $P_i$ for the remainder of the protocol\footnote{We can consider honest but curious corruptions where $\mathcal{A}$ learns all the state of $P_i$ but $P_i$ continues to run the protocol.}.  In this section we only consider a single execution of a single protocol.
 
+We have several extensions to the previous model:
+\begin{itemize}
+\item There is not a fixed number of participants.  The number of participants may grow with the execution of the protocol.  We allow any ITM to issue a ``create new'' instruction.  We also need an identity tape so participants can address each other.  The identity is specified by the creating ITI.
+\item We consider multiple input/output stages.  That is, $\mathcal{E}$ may write multiple times to the input tapes of $P_1,..., $ and read multiple outputs from each party.  However, we only allow one input and one output interaction between $\mathcal{A}$ and $\mathcal{E}$.
+\item We now allow the ideal machine to run arbitrary code~(since we have multiple output stages).  We further allow it to interact directly with the adversary.  Its entire code is considered the \texttt{ideal functionality} of the protocol.
+\end{itemize}
+\begin{definition}(Protocol emulation with basic security)  A protocol $\pi$ emulates protocol $\phi$ if for any $PT$ adversary $\mathcal{A}$ there exists a $PT$ adversary $\mathcal{S}$ such that for all $PT$ environments $\mathcal{E}$ that output only one bit:
+\[
+\mathtt{EXEC}_{\phi, \mathcal{S, E}}\approx\mathtt{EXEC}_{\pi, \mathcal{A, E}}
+\]
+\end{definition}
+\begin{definition}(Realizing functionalities with basic security) A protocol $\pi$ realizes an ideal functionality $\mathcal{F}$ if $\pi$ emulates $\mathcal{I_F}$\footnote{$\mathcal{I}$ is simply the machine upon receiving an input value copies it to $\mathcal{F}$ and upon receiving an output value forwards it to $\mathcal{E}$.}, the ideal protocol for $\mathcal{F}$
+A p
+\end{definition}
+Note that these definitions are not symmetric, a protocol $\phi$ emulating $\pi$ does not imply that $\pi$ emulates $\phi$.
+
+\textbf{Notes} The modeling of $\mathcal{A}$ as a single centralized adversary is something of a limitation and may not reflect reality.  However, it is significantly simpler.  The ideal process is allowed some interaction with $\mathcal{A}$, the types of interaction are very important here.  If this interaction is too limited then $\mathcal{S}$ cannot emulate $\mathcal{A}$ too open and security is vacuous.  Designing $\mathcal{F}$ is an important part of a protocol designer's job.
+
+\textbf{Examples:}
+\begin{itemize}
+\item Commitment
+\item Key Exchange
+\item Byzantine Agreement
+\end{itemize}
+\subsubsection{Feasibility}
+The protocol of~\cite{yao1986} provides security in the two party sense where corruptions are honest but curious.  The protocol of ~\cite{GoldreichMW87} generalizes for multi parties as well as arbitrary corruptions.
 \subsection{Issues with concurrence}
 \bibliographystyle{plain}
 \bibliography{crypto}
