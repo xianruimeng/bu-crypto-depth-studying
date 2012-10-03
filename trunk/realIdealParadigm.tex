@@ -219,7 +219,7 @@ A p
 \end{definition}
 Note that these definitions are not symmetric, a protocol $\phi$ emulating $\pi$ does not imply that $\pi$ emulates $\phi$.
 
-\textbf{Notes} The modeling of $\mathcal{A}$ as a single centralized adversary is something of a limitation and may not reflect reality.  However, it is significantly simpler.  The ideal process is allowed some interaction with $\mathcal{A}$, the types of interaction are very important here.  If this interaction is too limited then $\mathcal{S}$ cannot emulate $\mathcal{A}$ too open and security is vacuous.  Designing $\mathcal{F}$ is an important part of a protocol designer's job.
+\textbf{Notes} The modeling of $\mathcal{A}$ as a single centralized adversary is something of a limitation and may not reflect reality.  However, it is significantly simpler.  The ideal process is allowed some interaction with $\mathcal{A}$, the types of interaction are very important here.  If this interaction is too limited then $\mathcal{S}$ cannot emulate $\mathcal{A}$, if the interaction is too open then security is vacuous.  Designing $\mathcal{F}$ is an important part of a protocol designer's job.
 
 \textbf{Examples:}
 \begin{itemize}
@@ -228,8 +228,57 @@ Note that these definitions are not symmetric, a protocol $\phi$ emulating $\pi$
 \item Byzantine Agreement
 \end{itemize}
 \subsubsection{Feasibility}
-The protocol of~\cite{yao1986} provides security in the two party sense where corruptions are honest but curious.  The protocol of ~\cite{GoldreichMW87} generalizes for multi parties as well as arbitrary corruptions.
+The protocol of~\cite{yao1986} provides security in the two party sense where corruptions are honest but curious.  The protocol of ~\cite{GoldreichMW87} generalizes for multi parties as well as arbitrary corruptions.  However, neither Yao or Goldreich, Micali and Wigderson handle the issue of multiple protocols executing together.
 \subsection{Issues with concurrence}
+In this section, we briefly consider the issues that arise when protocols are composed.  The most intuition application is key exchange.  Generally, the purpose of a key exchange protocol is to execute secure communication with another party.
+\subsubsection{Key Exchange and Secure Communication}
+Let $\pi$ be a key exchange protocol that is secure in the standalone setting.  We create a protocol $\pi'$ with an additional step: after $key$ has been generated, if a message is received containing $key$, output $1$, otherwise output $0$.  Since, an adversary $A$ has a negligible chance of knowing $key$ this protocol is still secure.  However, as soon as we compose with an encryption scheme security may be lost.  We consider a simple one-time pad encryption scheme with one of two possible messages~(known to the adversary).  Then the adversary can guess one of the messages~(thus guessing the key) and use the protocol $\pi'$ to confirm their guess.  This allows them to learn both the message and key.
+
+\subsubsection{Concurrent Zero-Knowledge}
+We consider this example in very general terms.  We consider a zero-knowledge protocol $\pi$ for a language $L$.  We augment this protocol with the following two steps:
+
+\begin{itemize}
+\item $P$ shows $V$ the solution to some computational hard puzzle $p$
+\item $P$ and $V$ interact through protocol $\pi$.
+\item If $V$ presents a solution to some computational hard puzzle $p'\neq p$, $P$ outputs $w$.
+\end{itemize}
+
+If we assume there are computational puzzles that are easy for the prover but hard for the verifier, this should remain a secure zero-knowledge protocol in the standalone setting.  However, as soon as a verifier is able to interact with multiple provers $P, P'$ they can use the puzzle from one prover in the other prover's interaction and learn the witness in each instantiation.
+
+\subsubsection{Malleability of commitment}
+We consider an auction setting where two committers $C, C'$ wish to commit in secret on a bid for an item.  The committer with the higher committed price wins the auction.  We consider the commitment scheme of Pederson~\cite{Pedersen:1992fk}.  Here a commitment to $x$ is $com(x) = g^xh^r\mod p$ for generators $g, h$ of $\mathbb{Z}_p$.  Open simply reveals the two values $x, r$.  This is a secure commitment scheme.  However, it is clear that when $C$ commits to $y = g^xh^r$, it is possible to $C'$ to commit to a value $y'= yg$.  Once $C$ opens their commitment, it is possible for $C'$ to open their commitment~(they simply need the value $r$).  Thus, the second person to commit is always able to win the auction.
+
+\subsection{Types of Composition}
+We can consider several different ways that protocols can be composed:
+\begin{itemize}
+\item Timing composition
+\subitem Sequential composition: no two messages of a different protocol executions are interleaved.
+\subitem Non-concurrent composition: a protocol may call a subprotocol which runs to completion.  No messages from the outer protocol are sent while the inner protocol is executing.
+\subitem Parallel composition: a single protocol is executed multiple times.  Furthermore, the executions are split into rounds all the messages for a single round are sent before the next round begins.
+\subitem Concurrent composition: Arbitrary interleaving of protocol messages.
+\item Input coordination: how are inputs related between protocol executions
+\subitem Same input: each protocol has the same input.
+\subitem Fixed input: the environment must specify all inputs before any protocol begins.
+\subitem Adaptively chosen inputs: inputs to parties are chosen adaptively based on the state of the system.
+\item Protocol Coordination:
+\subitem Self-composition: only a single protocol is executed, perhaps multiple times.  This can also be thought of as a fixed number of protocols executed~(as they may all be coded into a single program ahead of time).
+\subitem General composition: the protocols to be run may be determined adaptively in response to the current state of the system.
+\item State coordination:
+\subitem Independent state: variables for a single protocol are not seen by other protocols.  Inputs may depend on outputs of other protocols.
+\subitem Joint state: specific state variables may be present in multiple protocols.
+\item Number of executions
+\subitem Fixed number of executions: each time the system is initiated the number of executions is known
+\subitem Bounded number of executions: the system is known not to initiate more than a bounded number of executions
+\subitem Unbounded number of executions: number of executions is chosen adaptively.
+\end{itemize}
+While most of these combinations yield meaningful definitions some combinations have received more attention in the literature.  See~\cite{canettiTutorial} for a survey of prior work.  The most general model is universal composition proposed by Canetti~\cite{canettiUC} and it captures most of the above situations.
+
+\subsection{Univeral Composition}
+We consider a model with a protocol $\rho$.  The instructions for each party provide instructions for input to some subroutine $\phi$ and instructions for when $\phi$ generates output.  We then consider a composed protocol.  Let $\pi$ be another protocol, we denote the composed protocol $\rho^{\pi/\phi}$ when each instance of $\phi$ is replaced by $\pi$.  This definition makes sense regardless of the number of invocations of $\phi$.  We can capture many settings in this model.  If we want the same-input setting each $\phi$ must run on the same input.  General composition is achieved by arbitrary $\rho$.  We consider $\phi$ as the ``formal'' specification while $\pi$ is the actual implementation.
+\begin{definition}
+Protocol $\pi$ emulates an ideal protocol $\phi$ with $\rho$-composable security if it holds that $\rho^{\pi/\phi}$ emulates $\rho$.
+\end{definition}
+We call the special case where $\rho$ is arbitrary \emph{universal composition}.  See~\cite{canettiTutorial} for more information on when protocols can be composed.
 \bibliographystyle{plain}
 \bibliography{crypto}
 \end{document}
