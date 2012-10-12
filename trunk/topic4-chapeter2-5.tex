@@ -1,0 +1,398 @@
+\documentclass{article}
+
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+%\usepackage{times}
+\usepackage{url}
+%\usepackage{bibspacing}
+%\setlength{\bibspacing}{\baselineskip}
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{alltt}
+
+ \definecolor{grey}{rgb}{0.9,0.9,0.9}
+
+
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{propo}[thm]{Proposition}
+\newtheorem{fct}[thm]{Fact}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{assm}[thm]{Assumption}
+\newtheorem{clm}[thm]{Claim}
+\newtheorem{techclm}[thm]{Technical Claim}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{cons}[thm]{Construction}
+
+\newenvironment{theorem}{\begin{thm}\begin{rm}}%
+{\end{rm}\end{thm}}
+\newenvironment{lemma}{\begin{lem}\begin{rm}}%
+{\end{rm}\end{lem}}
+\newenvironment{corollary}{\begin{cor}\begin{rm}}%
+{\end{rm}\end{cor}}
+\newenvironment{proposition}{\begin{propo}\begin{rm}}%
+{\end{rm}\end{propo}}
+\newenvironment{fact}{\begin{fct}\begin{rm}}%
+{\end{rm}\end{fct}}
+\newenvironment{definition}{\begin{defn}\begin{em}}%
+{\end{em}\end{defn}}
+\newenvironment{example}{\begin{exmp}\begin{em}}%
+{\end{em}\end{exmp}}
+\newenvironment{assumption}{\begin{assm}\begin{em}}%
+{\end{em}\end{assm}}
+\newenvironment{claim}{\begin{clm}\begin{rm}}%
+{\end{rm}\end{clm}}
+\newenvironment{techclaim}{\begin{techclm}\begin{rm}}%
+{\end{rm}\end{techclm}}
+\newenvironment{remark}{\begin{rem}\begin{em}}%
+{\end{em}\end{rem}}
+\newenvironment{construction}{\begin{cons}\begin{em}}%
+{\end{em}\end{cons}}
+
+
+
+\newcommand{\Succ}{\mathsf{Succ}}
+\newcommand{\Adv}{\mathbf{Adv}}
+ \newcommand{\Exp}{\mathbf{Exp}}
+\begin{document}
+
+\section{Introduction}
+In this first part we present a model for distributed computing for message-passing systems with no failures. We consider two main timing models, synchronous and asynchronous. We also provide the definition for time complexity and message complexity.\\
+We then present a few simple algorithms for message-passing systems, both synchronous and asynchronous.
+
+\subsection{System}
+We represent a distributed system as an undirected graph in which each node represent a processor and an edge is present between two nodes if and only if there is a channel between the corresponding processors.\\
+Formally, a system or algorithm consist of $n$ processors (node) $p_0, p_1, p_2 ..., p_{n-1}$. Each processor $p_i$ is modeled as a (possibly infinite) state machine with state set $Q_i$. Each state fo processor $p_i$ contains $2d$ (where $d$ is the degree of $p_i$) special components, \textit{$outbuf_i[l]$} and \textit{$inbuf_i[l]$}, $1 < l \leq r$: outbuf holds the messages that $p_i$ has sent to its neighbors not yet delivered and inbuf holds messages that have been delivered to $p_i$ not yet processed. The state set $Q_i$ contains a subset of initial state where  inbuf has to be empty but outbuf need not to be.
+The processor's state comprises accessible state of $p_i$. The transition function of $p_i$ takes as input a values for the accessible state of $p_i$. It produces as output a value for the accessible state of $p_i$ in which each $inbuf_i[l]$ is empty and an output of at most one message to be sent to the $l$ neighbor.\\
+A configuration is a vector $C=(q_0, ..., q_{n-1})$ where $q_i$ is a state of $p_i$.\\
+For message-passing system we consider two kinds of events: computational events, , $comp(i)$, representing a computational step fo $p_i$ in which $p_i$ transition function is applied to its current accessible state, and delivery events $del(i,j,m)$ representing the delivery of a message $m$ for $i$ to $j$.
+The behavior of a system is modeled as an execution, which is a sequence of configurations alternating with events. This seuqnece must satisfy several conditions depending on the system. We classify them as:
+\begin{itemize}
+\item \textbf{safety condition} must hold in every finite prefix of the sequence, e.g, every step of processor $p_i$ is followed by a step of $p_j$. 
+\item \textbf{liveness condition} must hold a certain number of times (possibly infinite). For example the condition ``eventually $p_1$ terminates'' requires that the termination happen once.
+\end{itemize}
+We will call \textbf{execution} any sequence satisfying all the safety conditions. If it also satisfy all required liveness conditions we will call it \textbf{admissible}.
+
+\subsection{Asynchronous systems}
+A system is asynchronous if there is no fixed upper bound on how long it take for a messege to be delivered or how much time elapses between steps of a processor, e.g, email.\\
+
+In the async model an execution is admissible if each processor has an infinite number of computation events and every message sent is eventually delivered. This requirement model the fact that the processors do not fail.\\
+The termination of an algorithm is defined by having a transition function not changing the processor state after certain point.
+
+\subsection{Synchronous System}
+In this model processors execute in lockstep. The execution is partitioned into rounds and in each of them every processor can send a message to each neighbor, the message are delivered, and every processor compute based on the messages just received.\\
+An execution is admissible if it is finite. Because of the round structure, this implies that every processor takes a finite number of steps and every message sent is eventually delivered.\\
+
+Note that in a synchronous system with no failures, once the algorithm is fixed, 
+the only relevant aspect of executions that can differ is the initial configuration. In an 
+asynchronous system, there can be many different executions of the same algorithm, 
+even with the same initial configuration and no failures, because the interleaving of 
+processor steps and the message delays are not fixed. 
+
+
+\subsection{Complexity}
+We are interested in two complexity measurement, the number of messages and the amount of time, required by distributed algorithm.
+To define them we add the notion of algorithm terminating.
+We assume that each processor's state set includes a subset of terminated states and each 
+processor's transition function maps terminated states only to terminated states. We 
+say that the system has terminated when all processors are in terminated 
+states and no messages are in transit.
+The message complexity of an algorithm for either a synchronous or an asynchronous message-passing system is the maximum, over all admissible executions of 
+the algorithm, of the total number of messages sent. number of rounds until termination. Thus the time complexity of an algorithm for 
+a synchronous message-passing system is the maximum number of rounds, in any 
+admissible execution of the algorithm, until the algorithm has terminated.
+Measuring time in an asynchronous system is less straightforward. A common 
+approach, and the one we will adopt, is to assume that the maximum message delay in 
+any execution is one unit of time and then calculate the running time until termination. 
+We define the delay of a message to be the time that elapses between the com- 
+putation event that sends the message and the computation event that processes the 
+message. In other words, it consists of the amount of time that the message waits in 
+the sender's outbuf together with the amount of time that the message waits in the 
+recipient's inbuf. 
+The time complexity of an asynchronous algorithm is the maximum time until 
+termination among all timed admissible executions in which every message delay is 
+at most one. 
+ 
+
+ 
+
+\section{Simple distributed systems}
+
+\subsection{Broadcast}
+We assume we want to broadcast a single message through a spanning tree to all the nodes in the network. We define the process $p_r$ as the root of the spanning tree that wants to send a message M to all the other processors.\\
+The spanning tree rooted at pr is maintained in 
+a distributed fashion: Each processor has a distinguished channel that leads to its 
+parent in the tree as well as a set of channels that lead to its children in the tree. 
+The spanning tree rooted at pr is maintained in 
+a distributed fashion: Each processor has a distinguished channel that leads to its 
+parent in the tree as well as a set of channels that lead to its children in the tree. 
+The code of the algorithm follows:
+\begin{alltt}
+Algorithm 1
+
+Initially (M) is in transit from \(p_r\) to all its children
+in the spanning tree.
+ 
+Code for pr: 
+	1: upon receiving no message: // first computation event by pr 
+	2: terminate
+	 
+Code for \(p_i, 0 \leq i \leq n â€” 1, i \neq r\): 
+	3: upon receiving (M) from parent: 
+	4: send (M) to all children 
+	5: terminate 
+\end{alltt}
+Note that this algorithm is correct whether the system is synchronous or asynchronous. Furthermore, as we discuss now, the message and time complexities of the 
+algorithm are the same in both models. 
+What is the message complexity of the algorithm? Clearly, the message (M) is 
+sent exactly once on each channel that belongs to the spanning tree (from the parent to 
+the child) in both the synchronous and asynchronous cases. That is, the total number 
+of messages sent during the algorithm is exactly the number of edges in the spanning 
+tree rooted at pr. Recall that a spanning tree of n nodes has exactly n â€” 1 edges; 
+therefore, exactly n â€” 1 messages are sent during the algorithm. \\
+Let us now analyze the time complexity of the algorithm. It is easier to perform 
+this analysis when communication is synchronous and time is measured in rounds. \\
+
+\begin{lemma}
+In every admissible execution of the broadcast algorithm in the syn- chronous model, every processor at distance t from pr in the spanning tree receives the message M in round t. 
+\end{lemma}
+
+\begin{theorem}
+There is a synchronous broadcast algorithm with message complexity 
+$n â€” 1$ and time complexity d, when a rooted spanning tree with depth d is known in 
+advance. 
+\end{theorem}
+
+A similar analysis applies when communication is asynchronous. 
+
+
+%\subsection{Convergcast}
+%The broadcast problem requires one-way communication, from the root, $p_r$, to all the 
+%nodes of the tree. Consider now the complementary problem, called convergecast, 
+%of collecting information from the nodes of the tree to the root. For simplicity, we 
+%consider a specific variant of the problem in which each processor $p_i$ starts with 
+%a value $x_i$ and we wish to forward the maximum value among these values to the 
+%root $p_r$. 
+
+\subsection{Flooding and building a spanning tree - BFS}
+Let us now consider the slightly more complicated problem of broadcast 
+without a preexisting spanning tree, starting from a distinguished processor $p_r$. First 
+we consider an asynchronous system. \\
+The algorithm, called flooding, starts from $p_r$, which sends the message M to all 
+its neighbors. When processor $p_i$ receives M for the first time, from some neighboring processor $p_j$, it sends M to all its 
+neighbors except $p_j$.\\
+Clearly, a processor will not send M more than once on any communication 
+channel. Thus M is sent at most twice on each communication channel (once 
+by each processor using this channel).Therefore at most the number of messages sent is ${n(n-1) \over 2}$\\
+Effectively, the flooding algorithm induces a spanning tree.\\
+To explicitly construct a spanning tree we need to modify a little the algorithm addig some extra message overhead. We just have to include $parent$, $children$ (nodes which respond with this messages are denoted as children and viceversa)  and $already$ messages which indicate that the nodes is already in the tree.\\
+
+The pseudocode of the algorithm follows:
+
+\begin{alltt}
+Algorithm 2
+
+Initially parent = \(\bot\), children = $\null$, and other = $\null$
+. 
+1: upon receiving no message: 
+2: if $p_i = p_r$ and parent \(\bot\) then // root has not yet sent (M) 
+3: send M to all neighbors 
+4: parent= \(p_i\) 
+
+5: upon receiving M from neighbor \(p_j\): 
+6: if parent = \(\bot\) then // \(p_i\) has not received M before 
+7: parent = $p_j$ 
+8: send \(\langle parent \rangle\) to \(p_j\) 
+9: send M to all neighbors except $p_j$ 
+10: else send \(\langle already \rangle\) to \(p_j\) 
+
+11: upon receiving \(\langle parent \rangle\) from neighbor \(p_j\): 
+12: add \(p_j\) to children 
+13: if \(children \bigcup other\) contains all neighbors except parent then 
+14: terminate 
+
+15: upon receiving\(\langle already \rangle\) from neighbor \(p_j\): 
+16: add \(p_j\) to other 
+17: if \(children \bigcup other\) contains all neighbors except parent then 
+18: terminate 
+
+\end{alltt} 
+
+\begin{lemma}
+In every admissible execution in the asynchronous model,  Algortihm 2 
+constructs a BFS tree of the network rooted at pr. 
+\end{lemma}
+
+\begin{theorem}
+There is an asynchronous (synchronous) algorithm to find a spanning tree of a network 
+with m edges and diameter D, given a distinguished node, with message complexity 
+$0(m)$ and time complexity $O(D)$. 
+\end{theorem}
+
+\begin{lemma}
+In every admissible execution in the synchronous model, Algortihm 2  
+constructs a BFS tree of the network rooted at $p-r$. 
+\end{lemma}
+
+\subsection{DFS}
+Another basic algorithm constructs a depth-first search (DFS) tree of the communication network, rooted at a particular node. A dfs tree is constructed by adding one 
+node at a time, more gradually than the spanning tree constructed by the previous algorithm, 
+which attempts to add all the nodes at the same level of the tree concurrently. \\
+The pseudocode follows:
+\begin{alltt}
+Algorithm 3: DFS
+
+Initially parent = \(\bot\), children = \(\null\) , unexplored = all neighbors of \(p_i\) 
+
+1: upon receiving no message: 
+2: if \(p_i = p_r\) and parent = \(\bot\) then 
+3: \(parent = p_i\) 
+4: explore()
+
+6: upon receiving M from \(p_f\). 
+7: if parent = \(\bot\) then 
+8: 		\(parent =  p_j\) 
+9: remove \(p_j\) from unexplored 
+10: explore () 
+11: else 
+12: send \(\langle already \rangle\) to \(p_j\) 
+13: remove pj from unexplored 
+14: upon receiving \(\langle already \rangle\) from \(p_j\): 
+15: explore() 
+
+16: upon receiving \(\langle parent \rangle\) from \(p_j\):  
+17: add \(p_j\)  to children 
+18: explore() 
+
+19: procedure explore(): 
+20: if \(unexplored \neq \null \) then 
+21: let \(p_k\) be a processor in unexplored 
+22: remove \(p_k\) from unexplored 
+23: send M to \(p_k\); 
+24: else 
+25: if \(parent \neq p_i\) then send \(\langle parent \rangle\) to parent 
+26: terminate // dfs subtree rooted at \(p_i\) has been built 
+
+\end{alltt}
+
+\begin{lemma}
+In every admissible execution in the asynchronous model, Algortihm 3 
+constructs a DFS tree of the network rooted at pr. 
+\end{lemma}
+
+To calculate the message complexity of the algorithm, note that each processor 
+sends (M) at most once on each of its adjacent edges; also, each processor generates 
+at most one message (either $\langle already \rangle$ or $\langle parent \rangle$) in response to receiving (M) on 
+each of its adjacent edges. Therefore, at most 4m messages are sent by Algorithm 3. 
+The time compelxity is also O(m)
+
+\begin{theorem}
+There is an asynchronous algorithm to find a depth-first search spanning tree of a network with m edges and n nodes, given a distinguished node, with 
+message complexity O(m) and time complexity O(m)
+\end{theorem}
+\section{Introduction}
+Coordination problems require processors to agree on a common course of action. Such problems are typically very easy to solve in reliable systems of the kind we have considered so far. In real systems, however, the various components do not operate correctly all the time. Here we consider systems in which processors' functionality is incorrect. First we consider benign types of failures in synchronous message passing systems. In this case, a faulty processor crashes, that is, stops operating, but does not perform wrong operations (e.g., deliver messages that were not sent). We study the consensus problem, a fundamental coordination problem that requires processors to agree on a common output, based on their (possibly conflicting) inputs. Then we consider more severe types of (mis)behavior of the faulty processors, still in synchronous message-passing systems. We assume failures are Byzantine, that is, a failed processor may behave arbitrarily. We show that if we want to solve consensus, less than a third of the processors can be faulty. Finally, we turn to asynchronous systems. We show that consensus cannot be achieved by a deterministic algorithm in asynchronous systems, even if only one processor fails in a benign manner by simply crashing. 
+
+\section{Definitions}
+A system is said to be \textit{f-resilient }if the maximum number of processors that can fail is $f$.
+For an \textit{f-resilient} system, the definition of an execution is modified as follows. There exists a subset $F$ of at most $f$ processors, the faulty processors; the set of faulty processors can be different in different executions, so that it is not known in advance which processors are faulty. Each round contains exactly one computation event for every processor not in $F$ and at most one computation event for every processor in $F$. Furthermore, if a processor in $F$ does not have a computation event in some round, then it has no computation event in any subsequent round. Finally, in the last round in which a faulty processor has a computation event, an arbitrary subset of its outgoing messages are delivered.
+
+Some technical details in the lower bound proof are made easier if we restrict attention to consensus algorithms in which every processor is supposed to send a message to every other processor at each round. This does not impair the generality of the result, because any consensus algorithm can be modified trivially to conform to this rule by adding dummy messages where necessary. We also assume that every processor keeps a history of all the messages it has received in all the previous rounds, so that a configuration contains the information concerning which processors have failed and how many rounds (or parts of rounds) have elapsed. An execution is said to be \textit{failure sparse} if there is at most one crash per round. Such executions are very useful in proving the lower bound since even a single failure can cause some information to be lost, and stretching out the failures over more rounds increases the amount of time in which there is uncertainty about the decision. In the remainder of this section, we only consider executions that are prefixes of admissible failure-sparse executions and configurations appearing in such executions.
+
+A key notion is the set of decisions that can be reached from a particular configuration. The next few definitions formalize this notion. The \textit{valence} of configuration $C$ is the set of all values that are decided upon by a nonfaulty processor in some configuration that is reachable from $C$ in an (admissible failure sparse) execution that includes $C$. By the termination condition, the set cannot be empty. $C$ is \textit{univalent} if this set contains one value; it is 0-\textit{valent} if this value is 0, and 1-\textit{valent} if this value is 1. If the set contains two values then $C$ is \textit{bivalent}. 
+
+\begin{definition} Let $\alpha$ be an execution and let $p_i$ be a processor. The \textit{view} of $p_i$ in $\alpha$, denoted by $\alpha|p_i$, is the subsequence of computation and message delivery events that occur in $\alpha$ at $p_i$ together with the state of $p_i$ in the initial configuration of $\alpha$. 
+\end{definition} 
+\begin{definition}Let $\alpha_1$ and $\alpha_2$ be two executions and let $p_i$ be a processor that is nonfaulty in $\alpha_1$ and $\alpha_2$. Execution $\alpha_1$ is similar to execution $\alpha_2$ with respect to $p_i$, denoted $\alpha_1 \sim \alpha_2$, if $\alpha_1|p_i = \alpha_2 |p_i$. 
+\end{definition}
+
+\section{The Consensus Problem}
+The Consensus Problem considers a system in which each processor $p_i$ has special state components $x_i$, the \textit{input}, and $y_i$, the \textit{output}, also called the decision. Initially, $x_i$ holds a value from some well-ordered set of possible inputs and $y_i$ is undefined. Any assignment to $y_i$ is irreversible. A solution to the consensus problem must guarantee the following: 
+\begin{description}
+
+\item[Termination] In every admissible execution, $y_i$ is eventually assigned a value, for every nonfaulty processor $p_i$.
+ \item[Agreement] In every execution, if $y_i$ and $y_j$ are assigned, then $y_i$ = $y_j$, for all nonfaulty processors $p_i$ and $p_j$. That is, nonfaulty processors do not decide on conflicting values.
+\item[Validity] In every execution, if, for some value $v$, $x_i = v$ for all processors $p_i$, and if $y_i$ is assigned for some nonfaulty processor $p_i$, then $y_i = v$. That is, if all the processors have the same input, then any value decided upon must be that common input. 
+\end{description}
+
+Observe that, if some processor has decided in a configuration, the agreement condition implies that the configuration is \textit{univalent}.
+\section{Crash Failures}
+
+\subsection{A Simple Algorithm}
+\begin{alltt}
+Algorithm 1: Consensus algorithm in the presence of crash failures: code for processor $p_1$, $0<i<n-1$
+1:Initially V ={x} // V contains \(p_i\) input
+2:round k, 1 \(\leq\) k \(\leq\) f+1:
+	3:send {u \(\in\) V: \(p_i\) has not already sent u} to all processors
+	4:receive \(S_j\) from \(p_j\), 0\(\leq\) j \(\leq\) n-1 j\(\neq\) i
+	5:V := V \(\cup\) \(\bigcup^{n-1}_{j=0}\) \(S_j\)
+	6:if k = f+1 then y:= min(V) //decide
+\end{alltt}
+\begin{lemma}
+In every execution, at the end of round $f + 1$, $V_i =  V_j$, for every two non-aulty processors $p_i$ and $p_j$. 
+\end{lemma}
+\textbf{Proof} It suffices to show that if $x \in V_i$ at the end of round $f + 1$, then $x 
+\in V_j$ at the end of round $f + 1$, for all nonfaulty processors $p_i and p_j$. Let $r $be the first round in which $x$ is added to $V_i$, for any nonfaulty processor $p_i$. If $x$ is initially in $V_i$, let $r$ be 0. If $r < f$ then, in round $r + 1 < f + 1$, $P_i$ sends $x$ to each $p_j$, which causes $p_j$ to add $x$ to $V_j$, if it is not already present. Otherwise, suppose $r =  f + 1$ and let $p_j$ be a nonfaulty processor that receives $x$ for the first time in round $f + 1$. Then there must be a chain of $f+ 1$ processors $p_{i_1},...,p_{i_{f+1}}$ that transfers the value $x$ to $p_j$. That is, $p_{i_1}$ sends $x$ to $p_{i_2}$ in round 1, $p_{i_2}$ sends $x$ to $p_{i_3}$ in round 2, etc., and finally $p_{i_f}$ sends $x$ to $p_{i_{f+1}}$ in round $f$, and $p_{i_{f+1}}$ sends $x$ to $p_j$ in round $f + 1$. Since each processor sends a particular value only once, the processors $p_{i_1},..., p_{i_{f+1}}$ form a set of $f+ 1$ distinct processors. Thus there must be at least one nonfaulty processor among them. However, this processor adds $x$ to its set at a round $\leq f < r$, contradicting the assumption that r is minimal. 
+
+Therefore, nonfaulty processors have the same set $V$ and decide on the same value. This implies that the agreement condition is satisfied. Thus we have: 
+
+\begin{theorem} Algorithm 15 solves the consensus problem in the presence of $f$ crash failures within $f + 1$ rounds.
+\end{theorem} 
+
+\subsection{Lower Bound on the Number of Rounds}
+\begin{theorem}
+Any consensus algorithm for $n$ processors that is resilient to $f$ crash failures requires at least $f +1$ rounds in some admissible execution, for all $n > f + 2$.
+\end{theorem}
+\textbf{Sketch Proof}. Consider any consensus algorithm $A$ for $n$ processors and $f$ crash failures, with $n > f + 2$. The proof strategy is, first, to show that there exists an $(f - 1)$-round execution of $A$ in which the configuration at the end is undecided. The next step is to show that with just one more round it is not possible for the processors to decide explicitly. Thus at least $f + 1$ rounds are required for decision. The $(f - 1)$-round execution in the first stage is constructed by induction.
+
+\begin{lemma} Algorithm $A$ has a bivalent initial configuration.
+\end{lemma}
+
+\begin{lemma} For each $k$, $0 \leq k \leq f-1$, there is a $k$-round execution of $A$ that ends in a bivalent configuration.
+\end{lemma} 
+
+\begin{lemma} If $\alpha_{f-1}$ is an $(f-1)$-round execution of $A$ that ends in a bivalent configuration, then there exists a one-round extension of $\alpha_{f-1}$ in which some nonfaulty processor has not decided.
+\end{lemma}
+
+The above lemmata together imply the existence of an $f$-round execution in which some nonfaulty processor has not decided. In every admissible extension of this execution (for instance, the extension in which there are no further crashes), at least $f +1$ rounds are required for termination. 
+
+\section{Byzantine Failures}
+We now study more severe, malicious failures, still in the context of  synchronous systems. This model is often called the Byzantine model, because of the following metaphoric description of the consensus problem: 
+
+Several divisions of the Byzantine army are camped outside an enemy city. Each division is commanded by a general. The generals can communicate with each other only by reliable messengers. The generals should decide on a common plan of action, that is, they should decide whether to attack the city or not (cf. \textit{agreement}), and if the generals are unanimous in their initial opinion, then that opinion should be the decision (cf. \textit{validity}). The new wrinkle is that some of the generals may be traitors (that is why they are in the Byzantine army) and may try to prevent the loyal generals from agreeing. To do so, the traitors send conflicting messages to different generals, falsely report on what they heard from other generals, and even conspire and form a coalition. 
+
+\subsection{Formal Model} We need to modify the prevous definition of execution (for reliable synchronous message passing) to handle Byzantine processor failures. In an execution of an $f$-resilient Byzantine system, there exists a subset of at most $f$ processors, the faulty processors. In a computation step of a faulty processor, the new state of the processor and the contents of the messages sent are completely unconstrained. As in the reliable case, every processor takes a computation step in every round and every message sent is delivered in that round. Thus a faulty processor can behave arbitrarily and even maliciously, for example, it can send different messages to different processors (or not send messages at all) when it is supposed to send the same message. The faulty processors can appear to coordinate with each other. In some situations, the recipient of a message from a faulty processor can detect that the sender is faulty, for instance, if the message is improperly formatted. Difficulties arise when the message received is plausible to the recipient, yet not correct. A faulty processor can also mimic the behavior of a crashed processor by failing to send any messages from some point onward.
+
+\subsection{Lower Bound onthe Ratio of Faulty Processors}
+\begin{theorem} In a system with three porcessors one of which is a Byzantine processor, there is no algorithm that solves the consensus problem.
+\end{theorem}
+\begin{theorem}
+In a system with $n$ processors and $f$ Byzantine processors, there is no algorithm that solves the consensus problem if $n < 3f$. 
+\end{theorem}
+\textbf{Proof} Assume, by way of contradiction, that there exists an algorithm that reaches consensus in a system with $n$ processors, $f$ of which might be Byzantine. Partition the processors into three sets, $P_0,P_1$, and $P_2$, each containing at most $n/3$ processors. Consider now a system with three processors, $p_0, p_1$, and $p_2$. We now describe a consensus algorithm for this system, which can tolerate one Byzantine failure. In the algorithm, $p_0$ simulates all the processors in $P_0$, $p_1$ simulates all the processors in $P_1$, and $p_2$ simulates all the processors in $P_2$. If one processor is faulty in the three-processor system, then since $n/3 < f$, at most $f$ processors are faulty in the simulated system with $n$ processors. Therefore, the simulated algorithm must preserve the \textit{validity} and \textit{agreement} conditions in the simulated system, and hence also in the three-processor system. Thus we have a consensus algorithm for a system with three processors that tolerates the failure of one processor. This contradicts Theorem 5.1.
+
+
+\subsection{Algorithms}
+\begin{theorem}
+There exists an algorithm that solves the consensus problem for a system of $n$ processors at the presence of $f$ Byzantine processors within $f+1$ rounds using exponential size, if $n > 3f$.
+\end{theorem}
+
+\begin{theorem}
+There exists an algorithm that solves the consensus problem for a system of $n$ processors at the presence of $f$ Byzantine processors within $2(f+1)$ rounds using exponential size, if $n > 4f$.
+\end{theorem}
+
+\section{Impossibility in Asynchronous Systems}
+\begin{theorem}There is no algorithm for solving the consensus problem in an asynchronous message-pairing system with $n$ processors, one of which may crash-fail.
+\end{theorem}
+
+%\bibliographystyle{plain}
+%\bibliography{crypto}
+\end{document}
