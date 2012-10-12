@@ -190,14 +190,14 @@ Clearly, a processor will not send M more than once on any communication
 channel. Thus M is sent at most twice on each communication channel (once 
 by each processor using this channel).Therefore at most the number of messages sent is ${n(n-1) \over 2}$\\
 Effectively, the flooding algorithm induces a spanning tree.\\
-To explicitly construct a spanning tree we need to modify a little the algorithm addig some extra message overhead. We just have to include $parent$, $children$ (nodes which respond with this messages are denoted as children and viceversa)  and $already$ messages which indicate that the nodes is already in the tree.\\
+To explicitly construct a spanning tree we need to modify a little the algorithm adding some extra message overhead. We just have to include $parent$, $children$ (nodes which respond with this messages are denoted as children and viceversa)  and $already$ messages which indicate that the nodes is already in the tree.\\
 
 The pseudocode of the algorithm follows:
 
 \begin{alltt}
 Algorithm 2
 
-Initially parent = \(\bot\), children = $\null$, and other = $\null$
+Initially parent = \(\bot\), children = \(\null\), and other = \(\null$\)
 . 
 1: upon receiving no message: 
 2: if $p_i = p_r$ and parent \(\bot\) then // root has not yet sent (M) 
