@@ -232,21 +232,30 @@ Alternatively, one can consider the posture of the attack.
 \end{itemize}
 
 \subsection{Differential Power Analysis}
-We provide a brief primer on differential power analysis as it is broadly applied and defenses are still difficult today.  We will consider the attack on the AES cipher but the principles apply to other ciphers as well.  Recall that AES128 is split into 10 rounds and recovering any round key is equivalent to recovering the entire key~(the key schedule transform is invertible).  Also recall that in a single block the only nonlinear operation is the SBox which operates on 8 bits at a time.  Thus, for each 8-bit portion of the key we know that $ct_{8i...8i+7} = f(key_{8i...8i+7}, state)$ where $state$ is the result of the first 9 rounds.  Then we can define a function $g(ct_{8i...8i+7}, key_{8i...8i+7}, b)$ for some value  bit $b$ of $state$.  Importantly if $key_{8i...8i+7}$ is not the correct value then $g=1$ with probability $1/2$.  The attacker then computes a differential of the power traces $T_{1...m}$ where $T_i[j]$ represents the value of trace $i$ at time $j$.
+We provide a brief primer on differential power analysis as it is broadly applied and defenses are still difficult today.  We will consider the attack on the AES cipher but the principles apply to other ciphers as well.  Recall that AES128 is split into 10 rounds and recovering any round key is equivalent to recovering the entire key~(the key schedule transform is invertible).  Also recall that in a single block the only nonlinear operation is the SBox which operates on 8 bits at a time.  Thus, for each 8-bit portion of the key we know that $ct_{8i...8i+7} = f(key_{8i...8i+7}, state_{8i...8i+7})$ where $state$ is the result of the first 9 rounds.  That is, is a single round, we can think of AES as 16 separate 8bit functions.  We will attack each of these functions individually.
 
-Then the attacker guesses the value of $key_{8i...8i+7}$ and computes:
+Then we can define a function $b = g(ct_{8i...8i+7}, key_{8i...8i+7})$ for some value  bit $b$ of $state$.    That is, we can compute any bit of state by inverting the transform knowing both the ciphertext and the key.  We can build this function because we are only operating small inputs.  However, if $key_{8i...8i+7}$ is not the correct value then we will get $b$ correct with probability $1/2$.  That is, our guess for $b$ will be uncorrelated with the true value.  
+
+The main idea of the attacker is to guess $b$ for each $key$ and through the power trace $T$ observe how correlated the guess is with reality.  Note that not all bits will show up in a power trace, choosing a $b$ that is observable in the power trace is the ``art'' of differential power analysis.  The attacker then computes a differential $T_{1,...,m}$ of the power traces of power traces $1$ through $m$.  We denote by $T_i[j]$ represents the value of trace $i$ at time $j$.
+
+Then for each possible value of $key_{8i...8i+7}$ the attacker computes:
 \begin{align*}
-\Delta_D[j] &= \frac{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})}
--\frac{\sum_{i=1}^m (1-g(C_i, b, key_{8i...8i+7}))T_i[j]}{\sum_{i=1}^m(1- g(C_i, b, key_{8i...8i+7}))}\\
-&\approx 2\left(  \frac{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})} - \frac{\sum_{i=1}^m T_i[j]}{m} \right)
+\Delta_D[j] &= \frac{\sum_{i=1}^m g(ct_i, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(ct_i, key_{8i...8i+7})}
+-\frac{\sum_{i=1}^m (1-g(ct_i, key_{8i...8i+7}))T_i[j]}{\sum_{i=1}^m(1- g(ct_i, key_{8i...8i+7}))}\\
+&\approx 2\left(  \frac{\sum_{i=1}^m g(ct_i, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(ct_i, key_{8i...8i+7})} - \frac{\sum_{i=1}^m T_i[j]}{m} \right)
 \end{align*}
-The main idea is that $\Delta_D[j]$ will appear as random noise if they guess if $key_{8i...8i+7}$ is incorrect.  However, if $key_{8i...8i+7}$ is correct then $\Delta_D[j]$ will have a peak at some point $j$.  This process is repeated for each part of the key using a different selection bit $b$.  Figure~\ref{fig:dpa trace}~(from~\cite{kocherDPA}) shows the shape of $\Delta_D[j]$ for incorrect and correct key guesses.
+The main idea is that $\Delta_D[j]$ will appear as random noise if they guess if $key_{8i...8i+7}$ is incorrect.  However, if $key_{8i...8i+7}$ is correct then $\Delta_D[j]$ will have a peak at some point $j$\footnote{The point where the bit $b$ is observable in the power trace.}.  The $key_{8i...8i+7}$ with the largest peak is taken to be the correct value of the key for those $8$ bits.  This process is repeated for each part of the key using a different selection bit $b$.  Figure~\ref{fig:dpa trace}~(from~\cite{kocherDPA}) shows the shape of $\Delta_D[j]$ for incorrect and correct key guesses.
 
 \begin{figure}
 \includegraphics[scale=.7]{dpaTrace}
 \caption{DPA traces, one correct and two incorrect, with power reference.}
 \label{fig:dpa trace}
 \end{figure}
+
+
+If any bit $b$ of state is correlated with the key, then the difference between when $b=0$ and when $b=1$ will be observable after the noise has been averaged out.  Defenses have proved illusive for differential power analysis, though approaches such as adding random values during computation~\cite{messergesMasking} or ensuring that an equal number of transitions from $0\rightarrow 1$ occur regardless of the key and plaintext~\cite{poppMangardDualRail}.  However, these techniques can be defeated by using either more samples or higher-order differential analysis~\cite{joyeSecondOrderDPA}.
+
 \bibliographystyle{plain}
 \bibliography{crypto}
 \end{document}
+
