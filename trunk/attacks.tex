@@ -214,7 +214,39 @@ Proving security of a cryptographic protocol is generally formalized in a game. 
 
 Laptop hard-disks are often encrypted to deal with theft.  For the device to be usable, keys to perform decryption and encryption must be stored~(often derived from a user-defined password).  The security rested on the assumption that in order for an attacker to read keys from memory, they would need to remove them from the system, and read them in their own device.  However, most computer memory is volatile and decays quickly without power.  In~\cite{coldboot}, the authors show how freezing memory significantly slows memory decay and allows for the memory to be read off, completely recovering the key and allowing complete decryption.  This is a very devastating attack, allowing for a complete break of the system under any meaningful notion.  However, it is very difficult to defend against and difficult to define a model that allows this attack but still retains security.
 
-However, there are many weaker attacks that do not recover read a key directly from memory but still allow for key recovery.  These can be defined by medium, what channel is the adversary using to learn information.  The most well-studied mediums are computation time~\cite{kocherTiming}, the power drawn by the circuit~\cite{kocherDPA}, the response time of memory caches~\cite{Bernstein05cache-timingattacks, Tromer:2010fk}, an electromagnetic signal~\cite{DEMAConcrete,DEMASmartCards}.
+However, there are many weaker attacks that do not recover read a key directly from memory but still allow for key recovery.  These can be defined by medium, what channel is the adversary using to learn information.  The most well-studied mediums are:
+\begin{itemize}
+\item Computation time:~\cite{kocherTiming}, 
+\item The power drawn by the circuit~\cite{kocherDPA}
+\item The response time of memory caches~\cite{Bernstein05cache-timingattacks, Tromer:2010fk}, 
+\item The electromagnetic emanations from the device~\cite{DEMAConcrete,DEMASmartCards},
+\item The inter-departure  time of network packets~\cite{voipAnalysis}.
+\end{itemize}
+
+Alternatively, one can consider the posture of the attack.
+\begin{itemize}
+\item \emph{Simple:}~\cite{kocherDPA} Attacker uses a single encryption to gain some information about the key.
+\item \emph{Differential:}~\cite{kocherDPA} Attacker performs many encryptions and uses statistics to verify guesses about portions of the key.
+\item \emph{Fault:}~\cite{bihamShamirFault} The crypto system is run under some adverse conditions~(such as high-temperature, increasing current to particular gates) to cause the algorithm to reveal key bits.
+\item \emph{Template:}~\cite{chariTemplate} Attacker performs pre computation on systems with known keys to increase speed on the system they are attacking.
+\end{itemize}
+
+\subsection{Differential Power Analysis}
+We provide a brief primer on differential power analysis as it is broadly applied and defenses are still difficult today.  We will consider the attack on the AES cipher but the principles apply to other ciphers as well.  Recall that AES128 is split into 10 rounds and recovering any round key is equivalent to recovering the entire key~(the key schedule transform is invertible).  Also recall that in a single block the only nonlinear operation is the SBox which operates on 8 bits at a time.  Thus, for each 8-bit portion of the key we know that $ct_{8i...8i+7} = f(key_{8i...8i+7}, state)$ where $state$ is the result of the first 9 rounds.  Then we can define a function $g(ct_{8i...8i+7}, key_{8i...8i+7}, b)$ for some value  bit $b$ of $state$.  Importantly if $key_{8i...8i+7}$ is not the correct value then $g=1$ with probability $1/2$.  The attacker then computes a differential of the power traces $T_{1...m}$ where $T_i[j]$ represents the value of trace $i$ at time $j$.
+
+Then the attacker guesses the value of $key_{8i...8i+7}$ and computes:
+\begin{align*}
+\Delta_D[j] &= \frac{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})}
+-\frac{\sum_{i=1}^m (1-g(C_i, b, key_{8i...8i+7}))T_i[j]}{\sum_{i=1}^m(1- g(C_i, b, key_{8i...8i+7}))}\\
+&\approx 2\left(  \frac{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})T_i[j]}{\sum_{i=1}^m g(C_i, b, key_{8i...8i+7})} - \frac{\sum_{i=1}^m T_i[j]}{m} \right)
+\end{align*}
+The main idea is that $\Delta_D[j]$ will appear as random noise if they guess if $key_{8i...8i+7}$ is incorrect.  However, if $key_{8i...8i+7}$ is correct then $\Delta_D[j]$ will have a peak at some point $j$.  This process is repeated for each part of the key using a different selection bit $b$.  Figure~\ref{fig:dpa trace}~(from~\cite{kocherDPA}) shows the shape of $\Delta_D[j]$ for incorrect and correct key guesses.
+
+\begin{figure}
+\includegraphics[scale=.7]{dpaTrace}
+\caption{DPA traces, one correct and two incorrect, with power reference.}
+\label{fig:dpa trace}
+\end{figure}
 \bibliographystyle{plain}
 \bibliography{crypto}
 \end{document}
