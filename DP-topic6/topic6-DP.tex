@@ -87,11 +87,16 @@ Given the impossibility result just showed we need to relax the definition of pr
 A randomized algrotihm A gives $\epsilon$-differential privacy if for all
 data sets $D_1$ and $D_2$ differing on at most one element, and all S $\subseteq$ Range(A),
 \begin{equation}
-Pr[A(D_1) \in S] \leq exp(\epsilon) \times Pr[A(D_2) \in S]
+Pr[M(D_1) \in S] \leq exp(\epsilon) \times Pr[A(M_2) \in S]
 \end{equation}
 \end{definition}
 
-A mechanism K satisfying this definition addresses concerns that any participant
+If $D_1 - D_2 > 1$ the equation becomes:
+\begin{equation}
+Pr[M(D_1) \in S] \leq exp(\epsilon \times (D_1 \oplus D_2) ) \times Pr[A(M_2) \in S]
+\end{equation}
+Where $\oplus$ represents the symmetric difference between the two datasets.\\
+A mechanism M satisfying this definition addresses concerns that any participant
 might have about the leakage of her personal information x: even if the participant
 removed her data from the data set, no outputs (and thus consequences
 of outputs) would become significantly more or less likely. For example, if the
@@ -101,6 +106,100 @@ database will not significantly affect her chance of receiving coverage.
 
 
 \section{Achieving DP}
+Now that we defined what we want to achieve, let's describe a concrete mechanism achieving differential privacy.\\
+The mechanism works by adding appropriately chosen \textbf{random noise} (form now on when we talk about random nois ewe consider Laplace random noise) to
+the answer a = f(X), where f is the query function and X is the database; thus
+the query functions may operate on the entire database at once. It can be as simple as
+– eg, ''Count the number of rows in the database satisfying a given predicate''. Obviously there are also more complicated example that we will see later.\\
+
+We will achieve $\epsilon$-differential privacy by the addition of random noise whose
+magnitude is chosen as a function of the largest change a single participant
+could have on the output to the query function; we refer to this quantity as the
+\textbf{sensitivity (or stability as it is called in ref)} of the function.
+
+\begin{definition}
+For $f: D \rightarrow R^d$ the sensitivity of $f$ is:
+\begin{equation}
+\Delta f = max_{D_1,D_2}||f(D_1) - f(D_2)||
+\end{equation}
+for all database $D_1,D_2$ differing in at most one element
+\end{definition}
+
+For many types of queries $\Delta f$ will be quite small. In particular, the simple counting
+queries (''How many rows have property P?'') have $\Delta f \leq 1$. Our techniques
+work best – ie, introduce the least noise – when $\Delta f$ is small. \textbf{Note that sensitivity
+is a property of the function alone, and is independent of the database}.\\
+
+
+
+\section{Aggregation}
+The simplest differentially-private aggregation 
+releases the number of records in a data set, perturbed by
+symmetric exponential (Laplace) noise, with density function
+$p(x) \propto exp(−|x|)$. In fact adding symmetric exponential noise to
+counts causes the probability of any output (or set
+of outputs) to increase or decrease by at most a multiplicative
+factor when the counts are translated.
+Changing an input data set from A to B can shift the
+true count by at most $|A \oplus B|$. The Laplace distribution is
+chosen because it has the property that translating its center
+(shifting the true value) by one unit scales the probability
+of any output by a multiplicative factor of at most exp(1).
+If the noise is first multiplied by $1 \over \epsilon$ this becomes $exp(\epsilon)$,
+resulting in $\epsilon$-differential privacy.
+
+\begin{theorem}
+The mechanism $M(X) = |X| + \; Laplace({1 \over \epsilon})$
+\end{theorem}
+
+The theorem works for the count transformation that is ``1-stable'' or in other word which sensitivity is 1.
+Let's see how the definition changes for a generic transformation. 
+\begin{definition}
+We say that a transformation T is c-stable if for any two input dataset A,B:
+\begin{equation}
+T(A) \oplus T(B) \leq c \times |A \oplus B|
+\end{equation}
+\end{definition}
+
+and 
+\begin{theorem}
+Let M provide $\epsilon$-DP, and let T be a an arbitrary c-stable transformation. The composite computation $M \circ T$ provides$(\epsilon \times c)$-differential privacy. 
+\end{theorem}
+
+\section{Composition}
+
+\subsection{Sequential composition}
+Any sequence of computations that each provide differential
+privacy in isolation also provide differential privacy in sequence.
+Importantly, this is true not only when they are run
+independently, but even when subsequent computations can
+incorporate the outcomes of the preceding computations.
+Notationally, we explicitly index each computation by the
+preceding outcomes, allowing them to vary arbitrarily as a
+function of these values. We still require each computation
+satisfy differential privacy with respect to their input data.
+
+\begin{theorem}
+Let Mi each provide $\epsilon$-differential privacy.
+The sequence of $M_i(X)$ provides $\sum\limits_{i}$-differential privacy
+\end{theorem}
+
+\subsection{Parallel composition}
+While general sequences of queries accumulate privacy
+costs additively, when the queries are applied to disjoint subsets
+of the data we can improve the bound. Specifically, if
+the domain of input records is partitioned into disjoint sets,
+independent of the actual data, and the restrictions of the
+input data to each part are subjected to differentially-private
+analysis, the ultimate privacy guarantee depends only on the
+worst of the guarantees of each analysis, not the sum.
+
+\begin{theorem}
+Let $M_i$ each provide $\epsilon$-differential privacy.
+Let $D_i$ be arbitrary disjoint subsets of the input domain D.
+The sequence of $Mi(X \bigcap D_i$ provides $\epsilon$-differential privacy
+\end{theorem}
+
 
 
 
