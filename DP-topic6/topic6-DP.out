@@ -1,7 +1,7 @@
-\BOOKMARK [1][-]{section.1}{Motivation}{}% 1
-\BOOKMARK [1][-]{section.2}{Differential Privacy: the setting}{}% 2
-\BOOKMARK [1][-]{section.3}{Achieving DP}{}% 3
-\BOOKMARK [1][-]{section.4}{Aggregation}{}% 4
-\BOOKMARK [1][-]{section.5}{Composition}{}% 5
-\BOOKMARK [2][-]{subsection.5.1}{Sequential composition}{section.5}% 6
-\BOOKMARK [2][-]{subsection.5.2}{Parallel composition}{section.5}% 7
+\BOOKMARK [1][-]{section.1}{Motivation}{}
+\BOOKMARK [1][-]{section.2}{Differential Privacy: the setting}{}
+\BOOKMARK [1][-]{section.3}{Achieving DP}{}
+\BOOKMARK [1][-]{section.4}{Aggregation}{}
+\BOOKMARK [1][-]{section.5}{Composition}{}
+\BOOKMARK [2][-]{subsection.5.1}{Sequential composition}{section.5}
+\BOOKMARK [2][-]{subsection.5.2}{Parallel composition}{section.5}
