@@ -87,13 +87,13 @@ Given the impossibility result just showed we need to relax the definition of pr
 A randomized algrotihm A gives $\epsilon$-differential privacy if for all
 data sets $D_1$ and $D_2$ differing on at most one element, and all S $\subseteq$ Range(A),
 \begin{equation}
-Pr[M(D_1) \in S] \leq exp(\epsilon) \times Pr[A(M_2) \in S]
+Pr[A(D_1) \in S] \leq exp(\epsilon) \times Pr[A(D_2) \in S]
 \end{equation}
 \end{definition}
 
 If $D_1 - D_2 > 1$ the equation becomes:
 \begin{equation}
-Pr[M(D_1) \in S] \leq exp(\epsilon \times (D_1 \oplus D_2) ) \times Pr[A(M_2) \in S]
+Pr[A(D_1) \in S] \leq exp(\epsilon \times (D_1 \oplus D_2) ) \times Pr[A(D_2) \in S]
 \end{equation}
 Where $\oplus$ represents the symmetric difference between the two datasets.\\
 A mechanism M satisfying this definition addresses concerns that any participant
@@ -107,7 +107,7 @@ database will not significantly affect her chance of receiving coverage.
 
 \section{Achieving DP}
 Now that we defined what we want to achieve, let's describe a concrete mechanism achieving differential privacy.\\
-The mechanism works by adding appropriately chosen \textbf{random noise} (form now on when we talk about random nois ewe consider Laplace random noise) to
+The mechanism works by adding appropriately chosen \textbf{random noise} (form now on when we talk about random noise we consider Laplace random noise) to
 the answer a = f(X), where f is the query function and X is the database; thus
 the query functions may operate on the entire database at once. It can be as simple as
 – eg, ''Count the number of rows in the database satisfying a given predicate''. Obviously there are also more complicated example that we will see later.\\
@@ -180,7 +180,7 @@ function of these values. We still require each computation
 satisfy differential privacy with respect to their input data.
 
 \begin{theorem}
-Let Mi each provide $\epsilon$-differential privacy.
+Let $M_i$ each provide $\epsilon$-differential privacy.
 The sequence of $M_i(X)$ provides $\sum\limits_{i}$-differential privacy
 \end{theorem}
 
@@ -197,7 +197,7 @@ worst of the guarantees of each analysis, not the sum.
 \begin{theorem}
 Let $M_i$ each provide $\epsilon$-differential privacy.
 Let $D_i$ be arbitrary disjoint subsets of the input domain D.
-The sequence of $Mi(X \bigcap D_i$ provides $\epsilon$-differential privacy
+The sequence of $M_i(X \bigcap D_i)$ provides $\epsilon$-differential privacy
 \end{theorem}
 
 
